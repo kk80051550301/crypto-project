@@ -2,9 +2,7 @@ import cryptocompare
 import collections 
 import pandas as pd
 import matplotlib.pyplot as plt
-
 from datetime import date
-from datetime import datetime
 
 
 # magic rate = 1.016 [ETH /2hrs -> 12hrs 10%]
@@ -29,8 +27,10 @@ def buy_unit(buy_price, crypto_price):
     base = crypto_price * 0.0001
     return (buy_price // base) * base
 
+
 def sell_unit(sell_price):
     return buy_unit(sell_price, 1)
+
 
 def plots(history):
     df = pd.DataFrame(history)
@@ -49,6 +49,7 @@ def plots(history):
     ax3.set_title("JPY")
     plt.show()
     return
+
 
 def main():
     MAGIC_BUY = 1
@@ -77,7 +78,7 @@ def main():
             assets_jpy += sell_cost * event["cost"]
             count['sell'] += 1
             state = "sell"
-        else : 
+        else: 
             state = "nothing"
         count['total'] += 1
         total = assets_jpy + close_values[-1]['cost'] * crypto_assets
@@ -90,6 +91,7 @@ def main():
     print(f"earn percetange : {(total - INITIAL_ASSETS) / INITIAL_ASSETS * 100} %")
     print(f"buy times : {count['buy']}, sell times : {count['sell']}, total times : {count['total']}")
     plots(history)
+
 
 if __name__ == "__main__":
     main()
