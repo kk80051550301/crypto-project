@@ -8,7 +8,7 @@ from formula import risk_cal
 
 # magic rate = 1.016 [ETH /2hrs -> 12hrs 10%]
 
-def get_close(crypto_name="BTC", limit=24, timestamp=1619009695):
+def get_close(crypto_name="ETH", limit=24, timestamp=1619009695):
     rst = []
     pre_val = 1
     tmp = cryptocompare.get_historical_price_hour(crypto_name, 'JPY', limit=limit, toTs=date.fromtimestamp(timestamp))
@@ -37,15 +37,19 @@ def plots(history):
     df = pd.DataFrame(history)
     print(df.head())
     
-    ax1 = plt.subplot(131)
+    ax1 = plt.subplot(221)
     ax1.plot(range(len(df)), df["total"])
     ax1.set_title("total")
 
-    ax2 = plt.subplot(132)
+    ax4 = plt.subplot(222)
+    ax4.plot(range(len(df)), df["cost"])
+    ax4.set_title("cost")
+
+    ax2 = plt.subplot(223)
     ax2.plot(range(len(df)), df["crypto"])
     ax2.set_title("crypto")
 
-    ax3 = plt.subplot(133)
+    ax3 = plt.subplot(224)
     ax3.plot(range(len(df)), df["JPY"])
     ax3.set_title("JPY")
     plt.show()
