@@ -2,20 +2,18 @@ import cryptocompare
 import collections 
 import pandas as pd
 import matplotlib.pyplot as plt
-from datetime import date, datetime
+from datetime import datetime, timedelta
 from formula import risk_cal 
 
 
-# magic rate = 1.016 [ETH /2hrs -> 12hrs 10%]
-
-def get_close(crypto_name="BTC", limit=24, timestamp=1619009695):
+def get_close(crypto_name="BTC", limit=24, end=datetime(2021, 4, 22)):
     rst = []
     pre_val = 1
-    tmp = cryptocompare.get_historical_price_hour(crypto_name, 'JPY', limit=limit, toTs=datetime(2021, 4, 22))
+    tmp = cryptocompare.get_historical_price_hour(crypto_name, 'JPY', limit=limit, toTs=end)
     for i, hr in enumerate(tmp):
         if i % 2 == 1:
             continue
-        rst.append({"cost":hr["close"], "perc_val":percent_calc(hr["close"], pre_val), "time":hr["time"]})
+        rst.append({"cost": hr["close"], "perc_val": percent_calc(hr["close"], pre_val), "time": hr["time"]})
         pre_val = hr['close']
     return rst[1:]
 
@@ -55,53 +53,73 @@ def plots(history):
     return
 
 
-def main():
-    # MAGIC_BUY = 1
-    # MAGIC_SELL = 1
-    INITIAL_ASSETS = assets_jpy = 200000
-    # buy_rate = 0.01
-    crypto_assets = 0
-    # sell_rate = 0.01
-    count = collections.defaultdict(int)
+def simulate(crypto_assets, assets_jpy, coef, crypto_type, end,
+             hours):
     history = []
-    state = ""
+    end -= timedelta(hours=hours)
+    r = hours
+    while r > 0:
+        if r > 1920:
+            end += timedelta(hours=1920)
+            crypto_assets, assets_jpy, history = part_simulate(crypto_assets, assets_jpy, coef, crypto_type, end, 1920)
+            r -= 1920
+        else:
+            end += timedelta(hours=r)
+            crypto_assets, assets_jpy, history = part_simulate(crypto_assets, assets_jpy, coef, crypto_type, end, r)
+            return history
 
-    close_values = get_close(crypto_name="ETH", limit=1920)
+
+def part_simulate(crypto_assets, assets_jpy, coef, crypto_type, end,
+                  hour, history=[]):
+    close_values = get_close(crypto_name="ETH", limit=hour, end=end)
     for event in close_values:
-        rate = risk_cal(event["perc_val"], 0.5, 1.5, 0.00075, 2)
+        state = "nothing"
+        rate = risk_cal(event["perc_val"], coef[0], coef[1], coef[2], coef[3])
         if event["perc_val"] < 0:
             # buy crypto
             buy_cost = buy_unit(assets_jpy * rate, event['cost'])
-            if buy_cost == 0:
-                state = "nothing"
-                continue
-            fee = buy_cost * 0.0012
-            assets_jpy -= (buy_cost + fee)
-            crypto_assets += buy_cost / event["cost"]
-            count['buy'] += 1
-            state = "buy"
+            if buy_cost > 0:
+                fee = buy_cost * 0.0012
+                assets_jpy -= (buy_cost + fee)
+                crypto_assets += buy_cost / event["cost"]
+                state = "buy"
         elif event["perc_val"] > 0:
             # sell crypto
             sell_cost = sell_unit(crypto_assets * rate)
-            if sell_cost == 0:
-                state = "nothing"
-                continue
-            crypto_assets -= sell_cost
-            assets_jpy += sell_cost * event["cost"] * 0.9988
-            count['sell'] += 1
-            state = "sell"
-        total = assets_jpy + close_values[-1]['cost'] * crypto_assets
-        history.append({"time": event['time'], "cost": event["cost"], "percent_val": event["perc_val"],
-                        "JPY": assets_jpy, "crypto": crypto_assets, "total": total, "state": state})
+            if sell_cost > 0:
+                crypto_assets -= sell_cost
+                assets_jpy += sell_cost * event["cost"] * 0.9988
+                state = "sell"
+        total = assets_jpy + event["cost"] * crypto_assets
+        history.append({"time": event['time'], "cost": event["cost"],
+                        "percent_val": event["perc_val"],
+                        "JPY": assets_jpy, "crypto": crypto_assets,
+                        "total": total, "state": state})
+    return crypto_assets, assets_jpy, history
 
-    print(f"jpy assets : {assets_jpy}")
-    print(f"crypto assets : {crypto_assets}")
-    print(f"total assets : {total}")
-    print(f"earn percetange : {(total - INITIAL_ASSETS) / INITIAL_ASSETS * 100}%")
-    print(f"buy times : {count['buy']}, sell times : {count['sell']}, total times : {len(close_values)}")
+
+def run():
+    end = datetime(2021, 4, 22)
+    hour = 3840
+    INITIAL_ASSETS = assets_jpy = 200000
+    crypto_assets = 0
+    crypto_type = "ETH"
+    coef = (0.5, 1.5, 0.00075, 2) 
+    history = simulate(crypto_assets, assets_jpy, coef, crypto_type, end, hour)
+    rst = history[-1]
+    count = collections.defaultdict(int)
+
+    for term in history:
+        count[term['state']] += 1
+        
+    print(f"jpy assets : {rst['JPY']}")
+    print(f"crypto assets : {rst['crypto']}")
+    print(f"total assets : {rst['total']}")
+    print(f"earn percetange : {(rst['total'] - INITIAL_ASSETS) / INITIAL_ASSETS * 100}%")
+    print(f"count :{count}")
     plots(history)
 
 
 if __name__ == "__main__":
-    main()
-
+    # main()
+    run()
