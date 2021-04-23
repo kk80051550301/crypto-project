@@ -2,14 +2,13 @@ import cryptocompare
 import collections 
 import pandas as pd
 import matplotlib.pyplot as plt
-
 from datetime import date
-from datetime import datetime
+from formula import risk_cal 
 
 
 # magic rate = 1.016 [ETH /2hrs -> 12hrs 10%]
 
-def get_close(crypto_name="BTC", limit=24, timestamp=1619009695):
+def get_close(crypto_name="ETH", limit=24, timestamp=1619009695):
     rst = []
     pre_val = 1
     tmp = cryptocompare.get_historical_price_hour(crypto_name, 'JPY', limit=limit, toTs=date.fromtimestamp(timestamp))
@@ -29,55 +28,63 @@ def buy_unit(buy_price, crypto_price):
     base = crypto_price * 0.0001
     return (buy_price // base) * base
 
+
 def sell_unit(sell_price):
     return buy_unit(sell_price, 1)
+
 
 def plots(history):
     df = pd.DataFrame(history)
     print(df.head())
     
-    ax1 = plt.subplot(131)
+    ax1 = plt.subplot(221)
     ax1.plot(range(len(df)), df["total"])
     ax1.set_title("total")
 
-    ax2 = plt.subplot(132)
+    ax4 = plt.subplot(222)
+    ax4.plot(range(len(df)), df["cost"])
+    ax4.set_title("cost")
+
+    ax2 = plt.subplot(223)
     ax2.plot(range(len(df)), df["crypto"])
     ax2.set_title("crypto")
 
-    ax3 = plt.subplot(133)
+    ax3 = plt.subplot(224)
     ax3.plot(range(len(df)), df["JPY"])
     ax3.set_title("JPY")
     plt.show()
     return
 
+
 def main():
-    MAGIC_BUY = 1
-    MAGIC_SELL = 1
+    # MAGIC_BUY = 1
+    # MAGIC_SELL = 1
     INITIAL_ASSETS = assets_jpy = 200000
-    buy_rate = 0.01
+    # buy_rate = 0.01
     crypto_assets = 0
-    sell_rate = 0.01
+    # sell_rate = 0.01
     count = collections.defaultdict(int)
     history = []
     state = ""
 
-    close_values = get_close(crypto_name="BTC", limit=1920)
+    close_values = get_close(crypto_name="ETH", limit=1920)
     for event in close_values:
-        if event["perc_val"] < -1 * MAGIC_BUY:
+        rate = risk_cal(event["perc_val"], 0, 2, 0.000724, 2)
+        if event["perc_val"] < 0:
             # buy crypto
-            buy_cost = buy_unit(assets_jpy * buy_rate, event['cost'])
+            buy_cost = buy_unit(assets_jpy * rate, event['cost'])
             assets_jpy -= buy_cost
             crypto_assets += buy_cost / event["cost"]
             count['buy'] += 1
             state = "buy"
-        elif event["perc_val"] > 1 * MAGIC_SELL:
+        elif event["perc_val"] > 0:
             # sell crypto
-            sell_cost = sell_unit(crypto_assets * sell_rate)
+            sell_cost = sell_unit(crypto_assets * rate)
             crypto_assets -= sell_cost
             assets_jpy += sell_cost * event["cost"]
             count['sell'] += 1
             state = "sell"
-        else : 
+        else: 
             state = "nothing"
         count['total'] += 1
         total = assets_jpy + close_values[-1]['cost'] * crypto_assets
@@ -90,6 +97,7 @@ def main():
     print(f"earn percetange : {(total - INITIAL_ASSETS) / INITIAL_ASSETS * 100} %")
     print(f"buy times : {count['buy']}, sell times : {count['sell']}, total times : {count['total']}")
     plots(history)
+
 
 if __name__ == "__main__":
     main()
