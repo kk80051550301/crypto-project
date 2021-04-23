@@ -3,6 +3,7 @@ import collections
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import date
+from formula import risk_cal 
 
 
 # magic rate = 1.016 [ETH /2hrs -> 12hrs 10%]
@@ -52,28 +53,29 @@ def plots(history):
 
 
 def main():
-    MAGIC_BUY = 1
-    MAGIC_SELL = 1
+    # MAGIC_BUY = 1
+    # MAGIC_SELL = 1
     INITIAL_ASSETS = assets_jpy = 200000
-    buy_rate = 0.01
+    # buy_rate = 0.01
     crypto_assets = 0
-    sell_rate = 0.01
+    # sell_rate = 0.01
     count = collections.defaultdict(int)
     history = []
     state = ""
 
-    close_values = get_close(crypto_name="BTC", limit=1920)
+    close_values = get_close(crypto_name="ETH", limit=1920)
     for event in close_values:
-        if event["perc_val"] < -1 * MAGIC_BUY:
+        rate = risk_cal(event["perc_val"], 0, 2, 0.000724, 2)
+        if event["perc_val"] < 0:
             # buy crypto
-            buy_cost = buy_unit(assets_jpy * buy_rate, event['cost'])
+            buy_cost = buy_unit(assets_jpy * rate, event['cost'])
             assets_jpy -= buy_cost
             crypto_assets += buy_cost / event["cost"]
             count['buy'] += 1
             state = "buy"
-        elif event["perc_val"] > 1 * MAGIC_SELL:
+        elif event["perc_val"] > 0:
             # sell crypto
-            sell_cost = sell_unit(crypto_assets * sell_rate)
+            sell_cost = sell_unit(crypto_assets * rate)
             crypto_assets -= sell_cost
             assets_jpy += sell_cost * event["cost"]
             count['sell'] += 1
