@@ -12,11 +12,22 @@ def risk_cal(x, min, max, a, slop):
 
 
 def plot_formula():
+
+    eval_list = [
+        (0.5, 1.5, 0.00075, 2),
+        (0, 2, 0.000724, 3),
+        (0, 2, 0.000724, 4),
+    ]
+
     x_axis = np.arange(-5, 5, 0.01)
     vfunc = np.vectorize(risk_cal)
-    y_axis = vfunc(x_axis, 0, 2, 0.000724, 3)
-    print(np.max(y_axis))
-    plt.plot(x_axis, y_axis)
+    for i, eval in enumerate(eval_list):
+        y_axis = vfunc(x_axis, *eval)
+        print(np.max(y_axis))
+
+        ax1 = plt.subplot(3, 3, i+1)
+        ax1.plot(x_axis, y_axis)
+        ax1.set_title("total")
     plt.show()
 
 
