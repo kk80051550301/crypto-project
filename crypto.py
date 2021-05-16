@@ -57,6 +57,9 @@ def get_close(crypto_name="BTC", start=datetime.now() - relativedelta(months=6),
         df = pd.read_csv(fn)
         return df
 
+    if not os.path.exists(cache_path):
+        os.makedirs(cache_path)
+
     values = []
     while limit > 0:
         amount = min(1920, limit)
