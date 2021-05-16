@@ -159,6 +159,9 @@ def run():
     summary_all = pd.DataFrame()
     for i, row in df_para.iterrows():
         id = row["#"]
+        done = row["done"]
+        if done == "Yes":
+            continue
         start = row["start_date"]
         end = row["end_date"]
         assets_jpy = row["initial_jpy"]
