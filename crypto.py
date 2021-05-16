@@ -1,11 +1,12 @@
 import os
 
 import cryptocompare
-import collections 
+import collections
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
-from formula import risk_cal 
+from dateutil.relativedelta import relativedelta
+from formula import risk_cal
 
 
 def percent_calc(value, pre_value):
@@ -21,38 +22,37 @@ def sell_unit(sell_price):
     return buy_unit(sell_price, 1)
 
 
-def plots(history):
-    df = pd.DataFrame(history)
-    df.to_csv("history.csv")
-    
+def plots(df_history, fn="plot.png"):
     ax1 = plt.subplot(321)
-    ax1.plot(range(len(df)), df["total"])
+    ax1.plot(range(len(df_history)), df_history["total"])
     ax1.set_title("total")
 
     ax4 = plt.subplot(322)
-    ax4.plot(range(len(df)), df["crypto_price"])
+    ax4.plot(range(len(df_history)), df_history["crypto_price"])
     ax4.set_title("crypto_price")
 
     ax2 = plt.subplot(323)
-    ax2.plot(range(len(df)), df["crypto_amount"])
+    ax2.plot(range(len(df_history)), df_history["crypto_amount"])
     ax2.set_title("crypto_amount")
 
     ax3 = plt.subplot(324)
-    ax3.plot(range(len(df)), df["JPY"])
+    ax3.plot(range(len(df_history)), df_history["JPY"])
     ax3.set_title("JPY")
 
     ax4 = plt.subplot(325)
-    ax4.plot(range(len(df)), df["total_fee"])
+    ax4.plot(range(len(df_history)), df_history["total_fee"])
     ax4.set_title("total_fee")
 
-    plt.savefig("plot.png")
-    plt.show()
-    return
+    if fn:
+        plt.savefig(fn)
+    # plt.show()
+    plt.close()
 
 
-def get_close(crypto_name="BTC", limit=24, end=datetime.now(), currency="JPY", cache_path="cache"):
-
-    fn = os.path.join(cache_path, f"{crypto_name}_{currency}_{end.date()}_{limit}.csv")
+def get_close(crypto_name="BTC", start=datetime.now() - relativedelta(months=6), end=datetime.now(), currency="JPY",
+              cache_path="cache"):
+    limit = (end - start).days * 24
+    fn = os.path.join(cache_path, f"{crypto_name}_{currency}_{end.date()}_{end.date()}.csv")
     if os.path.exists(fn):
         df = pd.read_csv(fn)
         return df
@@ -75,16 +75,42 @@ def get_close(crypto_name="BTC", limit=24, end=datetime.now(), currency="JPY", c
     return df
 
 
-def simulate(crypto_amount, assets_jpy, coef, crypto_type, end,
-             hours):
-    crypto_amount, assets_jpy, history = part_simulate(crypto_amount, assets_jpy, coef, crypto_type, end, hours)
-    return history
+def simulate(id, crypto_amount, assets_jpy, coef, crypto_name, start, end, result_root="simulations/"):
+    sub_path = f"#{id}_{crypto_name}_{assets_jpy:.1f}_coef[{'_'.join(map(lambda x: str(x), coef))}]_{start.date()}_{end.date()}"
+    result_path = os.path.join(result_root, sub_path)
+    if not os.path.exists(result_path):
+        os.makedirs(result_path)
+
+    history = run_simulation(crypto_amount, assets_jpy, coef, crypto_name, start, end)
+
+    final_state = history[-1]
+    count = collections.defaultdict(int)
+
+    for term in history:
+        count[term['state']] += 1
+
+    summary = {
+        "earn rate": (final_state['total'] - assets_jpy) / assets_jpy,
+        "final_total": final_state['total'],
+        "final_jpy": final_state["JPY"],
+        "final_crypto_amount": final_state['crypto_amount'],
+        **count
+    }
+    print(f"Result of running: {sub_path}:")
+    print(summary)
+
+    history_file = os.path.join(result_path, "history.xlsx")
+    plot_file = os.path.join(result_path, "plot.png")
+
+    df_history = pd.DataFrame(history)
+    df_history.to_excel(history_file)
+    plots(df_history, plot_file)
+    return summary
 
 
-def part_simulate(crypto_amount, assets_jpy, coef, crypto_name, end,
-                  hours, fee_rate=0.0012):
+def run_simulation(crypto_amount, assets_jpy, coef, crypto_name, start, end, fee_rate=0.0012):
     history = []
-    close_values = get_close(crypto_name=crypto_name, limit=hours, end=end)
+    close_values = get_close(crypto_name=crypto_name, start=start, end=end)
 
     total_fee = 0
     for index, event in close_values.iterrows():
@@ -117,30 +143,47 @@ def part_simulate(crypto_amount, assets_jpy, coef, crypto_name, end,
                         "crypto_value": crypto_value,
                         "total_fee": total_fee,
                         "total": total, "state": state})
-    return crypto_amount, assets_jpy, history
+    return history
 
 
 def run():
-    # end = datetime(2021, 4, 22)
-    end = datetime.today()
-    hour = 3840
-    INITIAL_ASSETS = assets_jpy = 200000
-    crypto_amount = 0
-    crypto_name = "ETH"
-    coef = (0.5, 1.5, 0.00075, 2) 
-    history = simulate(crypto_amount, assets_jpy, coef, crypto_name, end, hour)
-    rst = history[-1]
-    count = collections.defaultdict(int)
+    parameter_file = "input/parameters.xlsx"
+    simulation_result_base = "simulations"
+    result_file = os.path.join(simulation_result_base, f"result_{datetime.now().strftime('%Y%m%d%H%M%S')}.xlsx")
 
-    for term in history:
-        count[term['state']] += 1
-        
-    print(f"jpy assets : {rst['JPY']}")
-    print(f"crypto assets : {rst['crypto_amount']}")
-    print(f"total assets : {rst['total']}")
-    print(f"earn percetange : {(rst['total'] - INITIAL_ASSETS) / INITIAL_ASSETS * 100}%")
-    print(f"count :{count}")
-    plots(history)
+    df_para = pd.read_excel(parameter_file)
+
+    summary_all = pd.DataFrame()
+    for i, row in df_para.iterrows():
+        id = row["#"]
+        start = row["start_date"]
+        end = row["end_date"]
+        assets_jpy = row["initial_jpy"]
+        crypto_amount = row["initial_crypto"]
+        crypto_name = row["crypto_name"]
+        coef = (
+            row["coef_min"],
+            row["coef_max"],
+            row["coef_a"],
+            row["coef_slop"],
+        )
+
+        summary = simulate(
+            id=id,
+            crypto_amount=crypto_amount,
+            assets_jpy=assets_jpy,
+            coef=coef,
+            crypto_name=crypto_name,
+            start=start,
+            end=end,
+            result_root=simulation_result_base)
+        summary["#"] = id
+        summary_all = summary_all.append(summary, ignore_index=True)
+
+        try:
+            summary_all.to_excel(result_file, index=False)
+        except PermissionError as e:
+            summary_all.to_excel(result_file.replace(".xlsx", ".1.xlsx"), index=False)
 
 
 if __name__ == "__main__":
