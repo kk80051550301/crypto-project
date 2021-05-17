@@ -52,7 +52,7 @@ def plots(df_history, fn="plot.png"):
 def get_close(crypto_name="BTC", start=datetime.now() - relativedelta(months=6), end=datetime.now(), currency="JPY",
               cache_path="cache"):
     limit = (end - start).days * 24
-    fn = os.path.join(cache_path, f"{crypto_name}_{currency}_{end.date()}_{end.date()}.csv")
+    fn = os.path.join(cache_path, f"{crypto_name}_{currency}_{start.date()}_{end.date()}.csv")
     if os.path.exists(fn):
         df = pd.read_csv(fn)
         return df
