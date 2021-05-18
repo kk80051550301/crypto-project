@@ -10,6 +10,7 @@ from formula import risk_cal
 
 
 def percent_calc(value, pre_value):
+    # return percentage(unit is 1%)
     return (value - pre_value) / pre_value * 100
 
 
@@ -192,6 +193,26 @@ def run():
             summary_all.to_excel(result_file.replace(".xlsx", ".1.xlsx"), index=False)
 
 
+def run_ga(hour, coef):
+    end = datetime(2021, 4, 22)
+    INITIAL_ASSETS = assets_jpy = 200000
+    crypto_assets = 0
+    crypto_type = "ETH"
+    history = simulate(crypto_assets, assets_jpy, coef, crypto_type, end, hour)
+    rst = history[-1]
+    count = collections.defaultdict(int)
+
+    for term in history:
+        count[term['state']] += 1
+        
+    # print(f"jpy assets : {rst['JPY']}")
+    # print(f"crypto assets : {rst['crypto']}")
+    # print(f"total assets : {rst['total']}")
+    print(f"earn percetange : {(rst['total'] - INITIAL_ASSETS) / INITIAL_ASSETS * 100}%")
+    # print(f"count :{count}")
+    return ((rst['total'] - INITIAL_ASSETS) / INITIAL_ASSETS * 100, ) 
+
+import time
 if __name__ == "__main__":
     # main()
     run()
