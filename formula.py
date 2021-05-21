@@ -18,8 +18,7 @@ def risk_cal(change_rate, min_val, max_val, paras):
     # def invest index func
     # print(x, min_val, max_val, paras)
     a, n = paras
-    invest_index = a * math.exp(n) * abs(change_rate)
-    # invest_index = a * math.exp(n * abs(change_rate))
+    invest_index = a * math.exp(n * abs(change_rate))
     invest_index = min(max(invest_index, min_val), max_val)
     return invest_index
 
