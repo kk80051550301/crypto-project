@@ -79,36 +79,41 @@ def get_close(crypto_name="BTC", start=datetime.now() - relativedelta(months=6),
     return df
 
 
-def simulate(id, crypto_amount, assets_jpy, coef, crypto_name, start, end, result_root="simulations/"):
-    sub_path = f"#{id}_{crypto_name}_{assets_jpy:.1f}_coef[{'_'.join(map(lambda x: str(x), coef))}]_{start.date()}_{end.date()}"
-    result_path = os.path.join(result_root, sub_path)
-    if not os.path.exists(result_path):
-        os.makedirs(result_path)
-
+def simulate(id, crypto_amount, assets_jpy, coef, crypto_name, start, end, result_root="simulations/", save=False, verbose=False):
     history = run_simulation(crypto_amount, assets_jpy, coef, crypto_name, start, end)
 
     final_state = history[-1]
+    # Count of (buy/sell/nothing)
     count = collections.defaultdict(int)
 
     for term in history:
         count[term['state']] += 1
 
     summary = {
-        "earn rate": (final_state['total'] - assets_jpy) / assets_jpy,
+        "earn_rate": (final_state['total'] - assets_jpy) / assets_jpy,
         "final_total": final_state['total'],
         "final_jpy": final_state["JPY"],
         "final_crypto_amount": final_state['crypto_amount'],
         **count
     }
-    print(f"Result of running: {sub_path}:")
-    print(summary)
 
-    history_file = os.path.join(result_path, "history.xlsx")
-    plot_file = os.path.join(result_path, "plot.png")
+    if save:
+        sub_path = f"#{id}_{crypto_name}_{assets_jpy:.1f}_coef[{'_'.join(map(lambda x: str(x), coef))}]_{start.date()}_{end.date()}"
+        result_path = os.path.join(result_root, sub_path)
+        if not os.path.exists(result_path):
+            os.makedirs(result_path)
 
-    df_history = pd.DataFrame(history)
-    df_history.to_excel(history_file)
-    plots(df_history, plot_file)
+        history_file = os.path.join(result_path, "history.xlsx")
+        plot_file = os.path.join(result_path, "plot.png")
+
+        df_history = pd.DataFrame(history)
+        df_history.to_excel(history_file)
+        plots(df_history, plot_file)
+
+    if verbose:
+        print(f"Result of running: {sub_path}:")
+        print(summary)
+
     return summary
 
 
@@ -120,7 +125,7 @@ def run_simulation(crypto_amount, assets_jpy, coef, crypto_name, start, end, fee
     for index, event in close_values.iterrows():
         state = "nothing"
         fee = 0
-        rate = risk_cal(event["perc_val"], coef[0], coef[1], coef[2], coef[3])
+        rate = risk_cal(event["perc_val"], coef[0], coef[1], coef[2])
         if event["perc_val"] < 0:
             # buy crypto
             buy_cost = buy_unit(assets_jpy * rate, event["price"])
@@ -193,26 +198,6 @@ def run():
             summary_all.to_excel(result_file.replace(".xlsx", ".1.xlsx"), index=False)
 
 
-def run_ga(hour, coef):
-    end = datetime(2021, 4, 22)
-    INITIAL_ASSETS = assets_jpy = 200000
-    crypto_assets = 0
-    crypto_type = "ETH"
-    history = simulate(crypto_assets, assets_jpy, coef, crypto_type, end, hour)
-    rst = history[-1]
-    count = collections.defaultdict(int)
-
-    for term in history:
-        count[term['state']] += 1
-        
-    # print(f"jpy assets : {rst['JPY']}")
-    # print(f"crypto assets : {rst['crypto']}")
-    # print(f"total assets : {rst['total']}")
-    print(f"earn percetange : {(rst['total'] - INITIAL_ASSETS) / INITIAL_ASSETS * 100}%")
-    # print(f"count :{count}")
-    return ((rst['total'] - INITIAL_ASSETS) / INITIAL_ASSETS * 100, ) 
-
-import time
 if __name__ == "__main__":
     # main()
     run()
