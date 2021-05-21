@@ -1,9 +1,6 @@
 from datetime import datetime
-
-from crypto import run_simulation
-from optimize.crypto_optimize import optimize_main
 import random
-
+from crypto import run_simulation
 from optimize.crypto_optimizer_wu import EaSimpleOptimizer
 
 
@@ -37,6 +34,7 @@ def main():
     # pop_size = 1000
     pop_size = 300
     tour_size_factor = 0.01
+    # TODO: limit the min_val, max_val to a certain range
     attr_list = [[random.uniform, 0, 0.05], [random.uniform, 0.1, 0.2],
                  [random.uniform, 0.00075, 0.005], [random.uniform, 0.1, 5]]
     mu = [0, 0.15, 0.0008, 2]
