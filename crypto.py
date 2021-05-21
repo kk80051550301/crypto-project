@@ -125,7 +125,7 @@ def run_simulation(crypto_amount, assets_jpy, coef, crypto_name, start, end, fee
     for index, event in close_values.iterrows():
         state = "nothing"
         fee = 0
-        rate = risk_cal(event["perc_val"], coef[0], coef[1], coef[2])
+        rate = risk_cal(event["perc_val"], *coef)
         if event["perc_val"] < 0:
             # buy crypto
             buy_cost = buy_unit(assets_jpy * rate, event["price"])

@@ -7,18 +7,6 @@ import random
 from optimize.crypto_optimizer_wu import EaSimpleOptimizer
 
 
-def old():
-    POP_SIZE = 50
-    mu = [0, 0]
-    sigma = [1, 1]
-    FINAL_GEN = 20
-    paras_list = [[random.uniform, 0, 2], [random.uniform, 0, 2]]
-    hour = 72
-    cost_func = lambda paras, min=0.05, max=0.7, hour=hour: run_ga(hour, coef=(min, max, paras))
-
-    max_inds = optimize_main(paras_list, POP_SIZE, mu, sigma, FINAL_GEN, cost_func)
-    print(max_inds)
-
 def run_ga(coef):
     start = datetime(2021, 1, 1)
     end = datetime(2021, 4, 22)
@@ -40,21 +28,24 @@ def run_ga(coef):
 
 
 def main():
-
     weights = (1.0,)
 
     def eval_func(individual):
-        # TODO: replace with earn-value based on simulation
-        return sum(individual),
+        earn_rate = run_ga(coef=individual)
+        return earn_rate,
 
     # pop_size = 1000
     pop_size = 300
     tour_size_factor = 0.01
-    paras_list = [[random.uniform, -10, 10], [random.randint, -200, 300], [random.uniform, -1000, 1500]]
+    attr_list = [[random.uniform, 0, 0.05], [random.uniform, 0.1, 0.2],
+                 [random.uniform, 0.00075, 0.005], [random.uniform, 0.1, 5]]
+    mu = [0, 0.15, 0.0008, 2]
+    sigma = [0.2, 0.2, 0.001, 3]
     ngen = 40
 
     opt = EaSimpleOptimizer()
-    opt.prepare(paras_list, weights, eval_func, pop_size=pop_size, tour_size_factor=tour_size_factor, ngen=ngen)
+    opt.prepare(attr_list=attr_list, weights=weights, eval_func=eval_func, mu=mu, sigma=sigma,
+                pop_size=pop_size, tour_size_factor=tour_size_factor, ngen=ngen)
     hof, pop, log = opt.run(verbose=True)
 
     # print(log)

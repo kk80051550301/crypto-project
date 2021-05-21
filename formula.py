@@ -14,11 +14,16 @@ from optimize.crypto_optimize import optimize_main
 #         return 0
 #     return a * math.exp(b * abs(x))
 
-def risk_cal(change_rate, min_val, max_val, paras):
+def risk_cal(change_rate, min_val, max_val, a, n):
     # def invest index func
     # print(x, min_val, max_val, paras)
-    a, n = paras
-    invest_index = a * math.exp(n * abs(change_rate))
+    # a, n = paras
+    try:
+        invest_index = a * math.exp(n * abs(change_rate))
+    except OverflowError as e:
+        print(change_rate, min_val, max_val, a, n)
+        print(e)
+        raise e
     invest_index = min(max(invest_index, min_val), max_val)
     return invest_index
 
@@ -34,7 +39,7 @@ def plot_formula():
     vfunc = np.vectorize(risk_cal, excluded=["paras"])
     for i, item in enumerate(eval_list):
         mi, ma, pa = item
-        y_axis = vfunc(x_axis, mi, ma, paras=pa)
+        y_axis = vfunc(x_axis, mi, ma, a=pa[0], n=pa[1])
         print(np.max(y_axis))
 
         ax1 = plt.subplot(3, 3, i + 1)
