@@ -79,7 +79,8 @@ def get_close(crypto_name="BTC", start=datetime.now() - relativedelta(months=6),
     return df
 
 
-def simulate(id, crypto_amount, assets_jpy, coef, crypto_name, start, end, result_root="simulations/", save=False, verbose=False):
+def simulate(id, crypto_amount, assets_jpy, coef, crypto_name, start, end, result_root="simulations/", save=False,
+             verbose=False):
     history = run_simulation(crypto_amount, assets_jpy, coef, crypto_name, start, end)
 
     final_state = history[-1]
@@ -188,7 +189,9 @@ def run():
             crypto_name=crypto_name,
             start=start,
             end=end,
-            result_root=simulation_result_base)
+            result_root=simulation_result_base,
+            save=True,
+            verbose=True)
         summary["#"] = id
         summary_all = summary_all.append(summary, ignore_index=True)
 
