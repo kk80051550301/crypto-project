@@ -1,18 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import math
-import random
-from optimize.crypto_optimize import optimize_main
 
 
-# def risk_cal(x, min, max, a, b):
-#     # set max invest value
-#     if abs(x) > max:
-#         x = max
-#     # do none if previous rate < min
-#     elif abs(x) < min:
-#         return 0
-#     return a * math.exp(b * abs(x))
+def percent_calc(value, pre_value):
+    # return percentage(unit is 1%)
+    return (value - pre_value) / pre_value * 100
+
 
 def risk_cal(change_rate, min_val, max_val, a, n):
     # def invest index func

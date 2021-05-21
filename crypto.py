@@ -7,11 +7,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from formula import risk_cal
-
-
-def percent_calc(value, pre_value):
-    # return percentage(unit is 1%)
-    return (value - pre_value) / pre_value * 100
+from tools.retrieve_data import get_close
 
 
 def buy_unit(buy_price, crypto_price):
@@ -48,35 +44,6 @@ def plots(df_history, fn="plot.png"):
         plt.savefig(fn)
     # plt.show()
     plt.close()
-
-
-def get_close(crypto_name="BTC", start=datetime.now() - relativedelta(months=6), end=datetime.now(), currency="JPY",
-              cache_path="cache"):
-    limit = (end - start).days * 24
-    fn = os.path.join(cache_path, f"{crypto_name}_{currency}_{start.date()}_{end.date()}.csv")
-    if os.path.exists(fn):
-        df = pd.read_csv(fn)
-        return df
-
-    if not os.path.exists(cache_path):
-        os.makedirs(cache_path)
-
-    values = []
-    while limit > 0:
-        amount = min(1920, limit)
-        tmp = cryptocompare.get_historical_price_hour(crypto_name, currency, limit=amount, toTs=end)
-        end -= timedelta(hours=amount)
-        limit -= amount
-        values.extend(tmp)
-
-    df = pd.DataFrame(values)
-    df.sort_values("time", inplace=True)
-    df.drop_duplicates(subset="time", inplace=True)
-
-    df["perc_val"] = df.apply(lambda row: percent_calc(row["close"], row["open"]), axis=1)
-    df["price"] = df["close"]
-    df.to_csv(fn, index=False)
-    return df
 
 
 def simulate(id, crypto_amount, assets_jpy, coef, crypto_name, start, end, result_root="simulations/", save=False,
