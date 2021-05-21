@@ -8,29 +8,21 @@ from deap import base
 from deap import creator
 from deap import tools
 
-"""
-Genes: coef (min, max, a, slop)
-Evaluation function: coef: tuple => simulation => earn rate: float
-"""
-
-random.seed(64)
-
 
 class EaSimpleOptimizer:
 
-    def prepare(self, paras_list, weights, eval_func, pop_size=300, tour_size_factor=0.01, ngen=40, mutpb=0.2, cxpb=0.5,
-                indpb=0.05):
-
+    def prepare(self, attr_list, weights, eval_func, mu, sigma, alpha=0.2, pop_size=300, tour_size_factor=0.01,
+                ngen=40, mutpb=0.2, cxpb=0.5, indpb=0.05):
         creator.create("FitnessMax", base.Fitness, weights=weights)
         creator.create("Individual", list, fitness=creator.FitnessMax)
         toolbox = base.Toolbox()
-        func_seq = [partial(*item) for item in paras_list]
+        func_seq = [partial(*item) for item in attr_list]
         # Structure initializers
         toolbox.register("individual", tools.initCycle, creator.Individual, func_seq)
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
         toolbox.register("evaluate", eval_func)
-        toolbox.register("mate", tools.cxTwoPoint)
-        toolbox.register("mutate", tools.mutFlipBit, indpb=indpb)
+        toolbox.register("mate", tools.cxBlend, alpha=alpha)
+        toolbox.register("mutate", tools.mutGaussian, mu=mu, sigma=sigma, indpb=indpb)
         toolbox.register("select", tools.selTournament, tournsize=int(pop_size * tour_size_factor))
 
         self.pop = toolbox.population(n=pop_size)
@@ -61,27 +53,31 @@ class EaSimpleOptimizer:
         return self.hof, self.pop, self.log
 
 
-def main():
-
-    weights = (1.0,)
+def test():
+    random.seed(64)
 
     def eval_func(individual):
-        # TODO: replace with earn-value based on simulation
-        return sum(individual),
+        return -1 * (individual[0] ** 2 + individual[1] ** 2 + individual[2] ** 2),
 
+    weights = (1.0,)
     pop_size = 1000
     tour_size_factor = 0.01
-    paras_list = [[random.uniform, -10, 10], [random.randint, -200, 300], [random.uniform, -1000, 1500]]
-    ngen = 40
+    attr_list = [[random.uniform, -10, 10], [random.randint, -200, 300], [random.uniform, -1000, 1500]]
+    mu = [0.0, 0.0, 0.0]
+    sigma = [500.0, 200.0, 500.0]
+    ngen = 100
 
     opt = EaSimpleOptimizer()
-    opt.prepare(paras_list, weights, eval_func, pop_size=pop_size, tour_size_factor=tour_size_factor, ngen=ngen)
+    opt.prepare(attr_list=attr_list, weights=weights, eval_func=eval_func,
+                mu=mu, sigma=sigma, pop_size=pop_size,
+                tour_size_factor=tour_size_factor, ngen=ngen)
     hof, pop, log = opt.run(verbose=True)
 
     # print(log)
     print(hof)
+
     return pop, log, hof
 
 
 if __name__ == "__main__":
-    main()
+    test()
