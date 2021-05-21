@@ -14,36 +14,35 @@ from optimize.crypto_optimize import optimize_main
 #         return 0
 #     return a * math.exp(b * abs(x))
 
-def risk_cal(x, min, max, paras):
+def risk_cal(change_rate, min_val, max_val, paras):
     # def invest index func
-    print(x, min, max, paras)
-    invest_index = paras[0] * math.exp(paras[1]) * abs(x)
-    # set max invest index
-    if invest_index >= max:
-        invest_index = max
-    # set min invest index
-    elif invest_index <= min:
-        invest_index = min
-    return (invest_index, )
+    # print(x, min_val, max_val, paras)
+    a, n = paras
+    invest_index = a * math.exp(n) * abs(change_rate)
+    # invest_index = a * math.exp(n * abs(change_rate))
+    invest_index = min(max(invest_index, min_val), max_val)
+    return invest_index
+
 
 def plot_formula():
-
     eval_list = [
-        (0.5, 1.5,(0.00075, 2)),
+        (0.5, 1.5, (0.00075, 2)),
         (0, 2, (0.000724, 3)),
         (0, 2, (0.000724, 4)),
     ]
 
-    x_axis = np.arange(-5, 5, 0.01)
-    vfunc = np.vectorize(risk_cal)
-    for i, eval in enumerate(eval_list):
-        y_axis = vfunc(x_axis, *eval)
+    x_axis = np.arange(-30, 30, 0.1)
+    vfunc = np.vectorize(risk_cal, excluded=["paras"])
+    for i, item in enumerate(eval_list):
+        mi, ma, pa = item
+        y_axis = vfunc(x_axis, mi, ma, paras=pa)
         print(np.max(y_axis))
 
-        ax1 = plt.subplot(3, 3, i+1)
+        ax1 = plt.subplot(3, 3, i + 1)
         ax1.plot(x_axis, y_axis)
-        ax1.set_title("total")
+        ax1.set_title(f"min[{mi}]_max[{ma}]_p{pa}")
     plt.show()
+
 
 if __name__ == '__main__':
     plot_formula()
@@ -54,4 +53,3 @@ if __name__ == '__main__':
     # paras_list = [[random.uniform, 0, 100], [random.uniform, -10, 10]]
     # cost_func = lambda paras, x=1, min=0, max=1000 : risk_cal(x, min, max, paras)
     # optimize_main(paras_list, POP_SIZE, mu, sigma, FINAL_GEN, cost_func)
-    
