@@ -149,6 +149,40 @@ def run():
             summary_all.to_excel(result_file.replace(".xlsx", ".1.xlsx"), index=False)
 
 
+def profile_simulation():
+    import time
+    import statistics
+
+    n = [3, 1000]  # Run 3 * 1000 times
+    n = [3, 100]  # Run 3 * 1000 times
+
+    crypto_name = "ETH"
+    start = datetime(2021, 1, 1)
+    # start = datetime(2021, 4, 20)
+    end = datetime(2021, 4, 22)
+    df_historical_price = get_historical_price(crypto_name=crypto_name, start=start, end=end)
+    crypto_amount = 0
+    assets_jpy = 200000
+    coef = [0.077137627, 0.147341631, 0.003388124, 0.585231967]
+
+    res = []
+    n_data_records = 0
+    for i in range(n[0]):
+        start = time.time()
+        for j in range(n[1]):
+            history = run_simulation(crypto_amount, assets_jpy, coef, df_historical_price)
+            n_data_records = len(history)
+
+        elapsed = time.time() - start
+        print(f"Time cost of run #{i + 1:d} of [{n[1]:d}] times with [{n_data_records:d}] data records: {elapsed:.5f}s")
+        res.append(elapsed)
+
+    avg_single_run = statistics.mean(res) / n[1]
+    avg_single_record = avg_single_run / n_data_records
+    print(f"Avg time cost of single run: {avg_single_run:.5f}s")
+    print(f"Avg time cost of single record: {avg_single_record:.8f}s")
+
+
 if __name__ == "__main__":
-    # main()
     run()
+    # profile_simulation()
