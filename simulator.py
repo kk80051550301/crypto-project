@@ -154,11 +154,11 @@ def profile_simulation():
     import statistics
 
     n = [3, 1000]  # Run 3 * 1000 times
-    n = [3, 100]  # Run 3 * 1000 times
+    n = [3, 100]  # Run 3 * 100 times
 
     crypto_name = "ETH"
-    start = datetime(2021, 1, 1)
-    # start = datetime(2021, 4, 20)
+    # start = datetime(2021, 1, 1)
+    start = datetime(2021, 4, 20)
     end = datetime(2021, 4, 22)
     df_historical_price = get_historical_price(crypto_name=crypto_name, start=start, end=end)
     crypto_amount = 0
