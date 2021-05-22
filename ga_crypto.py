@@ -1,7 +1,7 @@
 from datetime import datetime
 import random
 from crypto import run_simulation
-from optimize.crypto_optimizer_wu import EaSimpleOptimizer
+from optimize.base import EaSimpleOptimizer
 from tools.retrieve_data import get_historical_price
 
 
