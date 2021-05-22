@@ -33,33 +33,22 @@ def risk_cal(change_rate, min_thresh, ceiling, a, n):
 
 def plot_formula():
     eval_list = [
-        (0.5, 1.5, (0.00075, 2)),
-        (0, 2, (0.000724, 3)),
-        (0, 2, (0.000724, 4)),
+        (0.01, .5, 0.00075, 2),
+        (0.2, .4, 0.000724, 3),
+        (0.03, .7, 0.000724, 4),
     ]
 
-    x_axis = np.arange(-30, 30, 0.1)
+    x_axis = np.arange(-5, 5, 0.1)
     vfunc = np.vectorize(risk_cal, excluded=["paras"])
     for i, item in enumerate(eval_list):
-        mi, ma, pa = item
-        y_axis = vfunc(x_axis, mi, ma, a=pa[0], n=pa[1])
+        mi, ma, a, n = item
+        y_axis = vfunc(x_axis, mi, ma, a, n)
         print(np.max(y_axis))
 
         ax1 = plt.subplot(3, 3, i + 1)
         ax1.plot(x_axis, y_axis)
-        ax1.set_title(f"min[{mi}]_max[{ma}]_p{pa}")
+        ax1.set_title(f"{mi}_{ma}_{a}_{n}")
     plt.show()
-
-
-if __name__ == '__main__':
-    plot_formula()
-    # POP_SIZE = 1000
-    # mu = [0, 0]
-    # sigma = [1, 1]
-    # FINAL_GEN = 10
-    # paras_list = [[random.uniform, 0, 100], [random.uniform, -10, 10]]
-    # cost_func = lambda paras, x=1, min=0, max=1000 : risk_cal(x, min, max, paras)
-    # optimize_main(paras_list, POP_SIZE, mu, sigma, FINAL_GEN, cost_func)
 
 
 def plot_history(df_history, fn="plot.png"):
@@ -87,3 +76,14 @@ def plot_history(df_history, fn="plot.png"):
         plt.savefig(fn)
     # plt.show()
     plt.close()
+
+
+if __name__ == '__main__':
+    plot_formula()
+    # POP_SIZE = 1000
+    # mu = [0, 0]
+    # sigma = [1, 1]
+    # FINAL_GEN = 10
+    # paras_list = [[random.uniform, 0, 100], [random.uniform, -10, 10]]
+    # cost_func = lambda paras, x=1, min=0, max=1000 : risk_cal(x, min, max, paras)
+    # optimize_main(paras_list, POP_SIZE, mu, sigma, FINAL_GEN, cost_func)
