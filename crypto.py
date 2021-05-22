@@ -1,12 +1,9 @@
 import os
 
-import cryptocompare
 import collections
 import pandas as pd
-import matplotlib.pyplot as plt
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
-from formula import risk_cal
+from datetime import datetime
+from utils import risk_cal, plot_history
 from tools.retrieve_data import get_historical_price
 
 
@@ -17,72 +14,6 @@ def buy_unit(buy_price, crypto_price):
 
 def sell_unit(sell_price):
     return buy_unit(sell_price, 1)
-
-
-def plots(df_history, fn="plot.png"):
-    ax1 = plt.subplot(321)
-    ax1.plot(range(len(df_history)), df_history["total"])
-    ax1.set_title("total")
-
-    ax4 = plt.subplot(322)
-    ax4.plot(range(len(df_history)), df_history["crypto_price"])
-    ax4.set_title("crypto_price")
-
-    ax2 = plt.subplot(323)
-    ax2.plot(range(len(df_history)), df_history["crypto_amount"])
-    ax2.set_title("crypto_amount")
-
-    ax3 = plt.subplot(324)
-    ax3.plot(range(len(df_history)), df_history["JPY"])
-    ax3.set_title("JPY")
-
-    ax4 = plt.subplot(325)
-    ax4.plot(range(len(df_history)), df_history["total_fee"])
-    ax4.set_title("total_fee")
-
-    if fn:
-        plt.savefig(fn)
-    # plt.show()
-    plt.close()
-
-
-def simulate(id, crypto_amount, assets_jpy, coef, crypto_name, start, end, result_root="simulations/", save=False,
-             verbose=False):
-    history = run_simulation(crypto_amount, assets_jpy, coef, crypto_name, start, end)
-
-    final_state = history[-1]
-    # Count of (buy/sell/nothing)
-    count = collections.defaultdict(int)
-
-    for term in history:
-        count[term['state']] += 1
-
-    summary = {
-        "earn_rate": (final_state['total'] - assets_jpy) / assets_jpy,
-        "final_total": final_state['total'],
-        "final_jpy": final_state["JPY"],
-        "final_crypto_amount": final_state['crypto_amount'],
-        **count
-    }
-
-    if save:
-        sub_path = f"#{id}_{crypto_name}_{assets_jpy:.1f}_coef[{'_'.join(map(lambda x: str(x), coef))}]_{start.date()}_{end.date()}"
-        result_path = os.path.join(result_root, sub_path)
-        if not os.path.exists(result_path):
-            os.makedirs(result_path)
-
-        history_file = os.path.join(result_path, "history.xlsx")
-        plot_file = os.path.join(result_path, "plot.png")
-
-        df_history = pd.DataFrame(history)
-        df_history.to_excel(history_file)
-        plots(df_history, plot_file)
-
-    if verbose:
-        print(f"Result of running: {sub_path}:")
-        print(summary)
-
-    return summary
 
 
 def run_simulation(crypto_amount, assets_jpy, coef, crypto_name, start, end, fee_rate=0.0012):
@@ -123,9 +54,48 @@ def run_simulation(crypto_amount, assets_jpy, coef, crypto_name, start, end, fee
     return history
 
 
+def simulate(id, crypto_amount, assets_jpy, coef, crypto_name, start, end, result_root="simulations/", save=False,
+             verbose=False):
+    history = run_simulation(crypto_amount, assets_jpy, coef, crypto_name, start, end)
+
+    final_state = history[-1]
+    # Count of (buy/sell/nothing)
+    count = collections.defaultdict(int)
+
+    for term in history:
+        count[term['state']] += 1
+
+    summary = {
+        "earn_rate": (final_state['total'] - assets_jpy) / assets_jpy,
+        "final_total": final_state['total'],
+        "final_jpy": final_state["JPY"],
+        "final_crypto_amount": final_state['crypto_amount'],
+        **count
+    }
+
+    if save:
+        sub_path = f"#{id}_{crypto_name}_{assets_jpy:.1f}_coef[{'_'.join(map(lambda x: str(x), coef))}]_{start.date()}_{end.date()}"
+        result_path = os.path.join(result_root, sub_path)
+        if not os.path.exists(result_path):
+            os.makedirs(result_path)
+
+        history_file = os.path.join(result_path, "history.xlsx")
+        plot_file = os.path.join(result_path, "plot.png")
+
+        df_history = pd.DataFrame(history)
+        df_history.to_excel(history_file)
+        plot_history(df_history, plot_file)
+
+    if verbose:
+        print(f"Result of running: {sub_path}:")
+        print(summary)
+
+    return summary
+
+
 def run():
     parameter_file = "input/parameters.xlsx"
-    simulation_result_base = "simulations"
+    simulation_result_base = "output/simulations/"
     result_file = os.path.join(simulation_result_base, f"result_{datetime.now().strftime('%Y%m%d%H%M%S')}.xlsx")
 
     df_para = pd.read_excel(parameter_file)

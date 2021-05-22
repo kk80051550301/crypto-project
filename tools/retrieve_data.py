@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 from cryptocompare import cryptocompare
-from formula import percent_calc
+from utils import percent_calc
 
 
 def get_historical_price(crypto_name="BTC", start=datetime.now() - relativedelta(months=6), end=datetime.now(), currency="JPY",
