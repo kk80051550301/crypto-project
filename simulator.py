@@ -65,7 +65,6 @@ def run_simulation(crypto_amount, assets_jpy, coef, df_historical_price, fee_rat
 
 def simulate(id, crypto_amount, assets_jpy, coef, crypto_name, start, end, result_root="simulations/", save=False,
              verbose=False):
-
     df_historical_price = get_historical_price(crypto_name=crypto_name, start=start, end=end)
     history = run_simulation(crypto_amount, assets_jpy, coef, df_historical_price)
 
@@ -107,6 +106,7 @@ def simulate(id, crypto_amount, assets_jpy, coef, crypto_name, start, end, resul
 def run():
     parameter_file = "input/parameters.xlsx"
     simulation_result_base = "output/simulations/"
+    simulation_details_base = "output/simulations/runs/"
     result_file = os.path.join(simulation_result_base, f"result_{datetime.now().strftime('%Y%m%d%H%M%S')}.xlsx")
 
     df_para = pd.read_excel(parameter_file)
@@ -137,7 +137,7 @@ def run():
             crypto_name=crypto_name,
             start=start,
             end=end,
-            result_root=simulation_result_base,
+            result_root=simulation_details_base,
             save=True,
             verbose=True)
         summary["#"] = id
