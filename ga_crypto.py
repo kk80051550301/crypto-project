@@ -25,7 +25,10 @@ def main():
     df_historical_price = get_historical_price(crypto_name=crypto_name, start=start, end=end)
 
     def eval_func(individual):
-        earn_rate = run_ga(df_historical_price, coef=individual)
+        if not (0 <= individual[0] <= 1 and 0 <= individual[1] <= 1):
+            earn_rate = -100
+        else:
+            earn_rate = run_ga(df_historical_price, coef=individual)
         return earn_rate,
 
     weights = (1.0,)
