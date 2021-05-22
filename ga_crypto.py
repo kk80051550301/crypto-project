@@ -21,6 +21,7 @@ def run_ga(df_historical_price, coef):
 def main():
     crypto_name = "ETH"
     start = datetime(2021, 1, 1)
+    # start = datetime(2021, 4, 20)
     end = datetime(2021, 4, 22)
     df_historical_price = get_historical_price(crypto_name=crypto_name, start=start, end=end)
 
@@ -35,10 +36,9 @@ def main():
     # pop_size = 1000
     pop_size = 50
     tour_size_factor = 0.01
-    # TODO: limit the min_val, max_val to a certain range
-    attr_list = [[random.uniform, 0, 0.05], [random.uniform, 0.1, 0.2],
+    attr_list = [[random.uniform, 0, 0.1], [random.uniform, 0.1, 0.2],
                  [random.uniform, 0.00075, 0.005], [random.uniform, 0.1, 5]]
-    mu = [0, 0.15, 0.0008, 2]
+    mu = [0] * 4
     sigma = [0.2, 0.2, 0.001, 3]
     ngen = 10
 
@@ -48,7 +48,7 @@ def main():
     hof, pop, log = opt.run(verbose=True)
 
     # print(log)
-    print(hof)
+    print("hof:{0}".format("\t".join(map(str, hof[0]))))
     return pop, log, hof
 
 
