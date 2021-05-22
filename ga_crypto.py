@@ -15,7 +15,7 @@ class StrategyTrainer:
         self.stg_class = stg_class
 
     @staticmethod
-    def run_ga(df_historical_price, strategy):
+    def calc_earn_rate(df_historical_price, strategy):
         initial_jpy_asset = 200000
         crypto_amount = 0
 
@@ -32,7 +32,7 @@ class StrategyTrainer:
             earn_rate = -100
         else:
             stg = self.stg_class(*individual)
-            earn_rate = self.run_ga(self.scenario.data, strategy=stg)
+            earn_rate = self.calc_earn_rate(self.scenario.data, strategy=stg)
         return earn_rate,
 
     def prepare(self, weights, attr_list, sigma, scenario,
