@@ -1,6 +1,6 @@
 from datetime import datetime
 import random
-from crypto import run_simulation
+from simulator import run_simulation
 from optimize.base import EaSimpleOptimizer
 from tools.retrieve_data import get_historical_price
 
