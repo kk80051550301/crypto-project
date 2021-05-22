@@ -3,6 +3,8 @@ import os
 import collections
 import pandas as pd
 from datetime import datetime
+
+from strategy import PurchaseStrategy
 from tools.utils import risk_cal, plot_history
 from tools.retrieve_data import get_historical_price
 
@@ -16,14 +18,15 @@ def sell_unit(sell_price):
     return buy_unit(sell_price, 1)
 
 
-def run_simulation(crypto_amount, assets_jpy, coef, df_historical_price, fee_rate=0.0012):
+def run_simulation(crypto_amount, assets_jpy, strategy, df_historical_price, fee_rate=0.0012):
     history = []
 
     total_fee = 0
     for index, event in df_historical_price.iterrows():
         state = "nothing"
         fee = 0
-        rate = risk_cal(event["perc_val"], *coef)
+        # rate = risk_cal(event["perc_val"], *coef)
+        rate = strategy.calc_buy_sell_rate(event["perc_val"])
         if rate < 0:
             buy_rate = - rate
             if buy_rate < 1:
@@ -65,8 +68,10 @@ def run_simulation(crypto_amount, assets_jpy, coef, df_historical_price, fee_rat
 
 def simulate(id, crypto_amount, assets_jpy, coef, crypto_name, start, end, result_root="simulations/", save=False,
              verbose=False):
+
     df_historical_price = get_historical_price(crypto_name=crypto_name, start=start, end=end)
-    history = run_simulation(crypto_amount, assets_jpy, coef, df_historical_price)
+    stg = PurchaseStrategy(*coef)
+    history = run_simulation(crypto_amount, assets_jpy, stg, df_historical_price)
 
     final_state = history[-1]
     # Count of (buy/sell/nothing)
@@ -164,13 +169,14 @@ def profile_simulation():
     crypto_amount = 0
     assets_jpy = 200000
     coef = [0.077137627, 0.147341631, 0.003388124, 0.585231967]
+    stg = PurchaseStrategy(*coef)
 
     res = []
     n_data_records = 0
     for i in range(n[0]):
         start = time.time()
         for j in range(n[1]):
-            history = run_simulation(crypto_amount, assets_jpy, coef, df_historical_price)
+            history = run_simulation(crypto_amount, assets_jpy, stg, df_historical_price)
             n_data_records = len(history)
 
         elapsed = time.time() - start

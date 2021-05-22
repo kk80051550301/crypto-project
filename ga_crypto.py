@@ -2,14 +2,15 @@ from datetime import datetime
 import random
 from simulator import run_simulation
 from optimize.base import EaSimpleOptimizer
+from strategy import PurchaseStrategy
 from tools.retrieve_data import get_historical_price
 
 
-def run_ga(df_historical_price, coef):
+def run_ga(df_historical_price, strategy):
     initial_jpy_asset = 200000
     crypto_amount = 0
 
-    history = run_simulation(crypto_amount=crypto_amount, assets_jpy=initial_jpy_asset, coef=coef,
+    history = run_simulation(crypto_amount=crypto_amount, assets_jpy=initial_jpy_asset, strategy=strategy,
                              df_historical_price=df_historical_price)
     final_state = history[-1]
     final_total_asset = final_state["total"]
@@ -29,7 +30,8 @@ def main():
         if not (0 <= individual[0] <= 1 and 0 <= individual[1] <= 1):
             earn_rate = -100
         else:
-            earn_rate = run_ga(df_historical_price, coef=individual)
+            stg = PurchaseStrategy(*individual)
+            earn_rate = run_ga(df_historical_price, strategy=stg)
         return earn_rate,
 
     weights = (1.0,)
