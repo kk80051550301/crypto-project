@@ -4,6 +4,7 @@ import collections
 import pandas as pd
 from datetime import datetime
 
+from scenario import Scenario
 from strategy import PurchaseStrategy
 from tools.utils import risk_cal, plot_history
 from tools.retrieve_data import get_historical_price
@@ -66,12 +67,10 @@ def run_simulation(crypto_amount, assets_jpy, strategy, df_historical_price, fee
     return history
 
 
-def simulate(id, crypto_amount, assets_jpy, coef, crypto_name, start, end, result_root="simulations/", save=False,
+def simulate(id, crypto_amount, assets_jpy, coef, scenario, result_root="simulations/", save=False,
              verbose=False):
-
-    df_historical_price = get_historical_price(crypto_name=crypto_name, start=start, end=end)
     stg = PurchaseStrategy(*coef)
-    history = run_simulation(crypto_amount, assets_jpy, stg, df_historical_price)
+    history = run_simulation(crypto_amount, assets_jpy, stg, scenario.data)
 
     final_state = history[-1]
     # Count of (buy/sell/nothing)
@@ -88,8 +87,8 @@ def simulate(id, crypto_amount, assets_jpy, coef, crypto_name, start, end, resul
         **count
     }
 
+    sub_path = f"#{id}_{scenario.path_str()}_coef[{'_'.join(map(lambda x: str(x), coef))}]"
     if save:
-        sub_path = f"#{id}_{crypto_name}_{assets_jpy:.1f}_coef[{'_'.join(map(lambda x: str(x), coef))}]_{start.date()}_{end.date()}"
         result_path = os.path.join(result_root, sub_path)
         if not os.path.exists(result_path):
             os.makedirs(result_path)
@@ -122,11 +121,8 @@ def run():
         done = row["done"]
         if done == "Yes":
             continue
-        start = row["start_date"]
-        end = row["end_date"]
         assets_jpy = row["initial_jpy"]
         crypto_amount = row["initial_crypto"]
-        crypto_name = row["crypto_name"]
         coef = (
             row["coef_min"],
             row["coef_max"],
@@ -134,14 +130,17 @@ def run():
             row["coef_slop"],
         )
 
+        scenario = Scenario(crypto_name=row["crypto_name"],
+                            start=row["start_date"],
+                            end=row["end_date"],
+                            currency="JPY")
+
         summary = simulate(
             id=id,
             crypto_amount=crypto_amount,
             assets_jpy=assets_jpy,
             coef=coef,
-            crypto_name=crypto_name,
-            start=start,
-            end=end,
+            scenario=scenario,
             result_root=simulation_details_base,
             save=True,
             verbose=True)

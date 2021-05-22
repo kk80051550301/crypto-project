@@ -1,16 +1,17 @@
-from datetime import datetime
 import random
+import pandas as pd
+
+from scenario import Scenario
 from simulator import run_simulation
 from optimize.base import EaSimpleOptimizer
 from strategy import PurchaseStrategy
-from tools.retrieve_data import get_historical_price
 
 
 class StrategyTrainer:
 
     def __init__(self, stg_class=None):
         self.opt = EaSimpleOptimizer()
-        self.df_historical_price = None
+        self.scenario = None
         self.stg_class = stg_class
 
     @staticmethod
@@ -31,14 +32,14 @@ class StrategyTrainer:
             earn_rate = -100
         else:
             stg = self.stg_class(*individual)
-            earn_rate = self.run_ga(self.df_historical_price, strategy=stg)
+            earn_rate = self.run_ga(self.scenario.data, strategy=stg)
         return earn_rate,
 
-    def prepare(self, weights, attr_list, sigma, crypto_name="ETH", start=datetime(2021, 4, 20),
-                end=datetime(2021, 4, 22), pop_size=50, tour_size_factor=0.01, ngen=10):
+    def prepare(self, weights, attr_list, sigma, scenario,
+                pop_size=50, tour_size_factor=0.01, ngen=10):
 
         mu = [0] * len(attr_list)
-        self.df_historical_price = get_historical_price(crypto_name=crypto_name, start=start, end=end)
+        self.scenario = scenario
 
         self.opt.prepare(attr_list=attr_list, weights=weights, eval_func=self.eval_func, mu=mu, sigma=sigma,
                          pop_size=pop_size, tour_size_factor=tour_size_factor, ngen=ngen)
@@ -52,6 +53,16 @@ class StrategyTrainer:
 
 
 def main():
+    scenario_file = "input/market_patterns.csv"
+    df_scenarios = pd.read_csv(scenario_file)
+    for col in ["start", "end"]:
+        df_scenarios[col] = pd.to_datetime(df_scenarios[col])
+    scenarios = []
+    for i, row in df_scenarios.iterrows():
+        s = Scenario(**row)
+        s.populate_data()
+        scenarios.append(s)
+
     pop_size = 50
     ngen = 10
     weights = (1.0,)
@@ -59,10 +70,11 @@ def main():
                  [random.uniform, 0.00075, 0.005], [random.uniform, 0.1, 5]]
     sigma = [0.2, 0.2, 0.001, 3]
     st = StrategyTrainer(stg_class=PurchaseStrategy)
-    st.prepare(weights=weights, attr_list=attr_list, sigma=sigma)
-    stg = st.train(verbose=True)
 
-    print(stg)
+    for scenario in scenarios:
+        st.prepare(weights=weights, attr_list=attr_list, sigma=sigma, scenario=scenario)
+        stg = st.train(verbose=True)
+        print(f"Best strategy under {scenario}: {stg}")
 
 
 if __name__ == "__main__":
