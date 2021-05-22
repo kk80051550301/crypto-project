@@ -3,7 +3,7 @@ import os
 import collections
 import pandas as pd
 from datetime import datetime
-from utils import risk_cal, plot_history
+from tools.utils import risk_cal, plot_history
 from tools.retrieve_data import get_historical_price
 
 
@@ -24,28 +24,38 @@ def run_simulation(crypto_amount, assets_jpy, coef, df_historical_price, fee_rat
         state = "nothing"
         fee = 0
         rate = risk_cal(event["perc_val"], *coef)
-        if event["perc_val"] < 0:
-            # buy crypto
-            buy_cost = buy_unit(assets_jpy * rate, event["price"])
-            if buy_cost > 0:
-                fee = buy_cost * fee_rate
-                assets_jpy -= (buy_cost + fee)
-                crypto_amount += buy_cost / event["price"]
+        if rate < 0:
+            buy_rate = - rate
+            if buy_rate < 1:
+                # buy crypto
+                buy_cost = buy_unit(assets_jpy * buy_rate, event["price"])
+                if buy_cost > 0:
+                    fee = buy_cost * fee_rate
+                    assets_jpy -= buy_cost + fee
+                    crypto_amount += buy_cost / event["price"]
                 state = "buy"
-        elif event["perc_val"] > 0:
-            # sell crypto
-            sell_amount = sell_unit(crypto_amount * rate)
-            if sell_amount > 0:
-                crypto_amount -= sell_amount
-                sell_price = sell_amount * event["price"]
-                fee = sell_price * fee_rate
-                assets_jpy += sell_price - fee
-                state = "sell"
+            else:
+                print(f"WARNING: you are buying more than your currency asset, skip! rate: {rate}")
+        elif rate > 0:
+            if rate < 1:
+                # sell crypto
+                sell_amount = sell_unit(crypto_amount * rate)
+                if sell_amount > 0:
+                    crypto_amount -= sell_amount
+                    sell_price = sell_amount * event["price"]
+                    fee = sell_price * fee_rate
+                    assets_jpy += sell_price - fee
+                    state = "sell"
+            else:
+                print(f"WARNING: you are selling more than your crypto asset, skip! rate: {rate}")
+
         total_fee += fee
         crypto_value = event["price"] * crypto_amount
         total = assets_jpy + crypto_value
-        history.append({"time": event['time'], "crypto_price": event["price"],
+        history.append({"time": event['time'],
                         "percent_val": event["perc_val"],
+                        "rate": rate,
+                        "crypto_price": event["price"],
                         "JPY": assets_jpy, "crypto_amount": crypto_amount,
                         "crypto_value": crypto_value,
                         "total_fee": total_fee,

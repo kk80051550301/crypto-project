@@ -10,17 +10,24 @@ def percent_calc(value, pre_value):
     return (value - pre_value) / pre_value * 100
 
 
-def risk_cal(change_rate, min_val, max_val, a, n):
+def risk_cal(change_rate, min_thresh, ceiling, a, n):
     # def invest index func
     # print(x, min_val, max_val, paras)
     # a, n = paras
     try:
         invest_index = a * math.exp(n * abs(change_rate))
     except OverflowError as e:
-        print(change_rate, min_val, max_val, a, n)
+        print(change_rate, min_thresh, ceiling, a, n)
         print(e)
         raise e
-    invest_index = min(max(invest_index, min_val), max_val)
+    # invest_index = min(max(invest_index, min_val), max_val)
+
+    invest_index = 0 if invest_index < min_thresh else invest_index
+    invest_index = min(invest_index, ceiling)
+
+    if change_rate < 0:
+        invest_index = - invest_index
+
     return invest_index
 
 
