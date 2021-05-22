@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from formula import risk_cal
-from tools.retrieve_data import get_close
+from tools.retrieve_data import get_historical_price
 
 
 def buy_unit(buy_price, crypto_price):
@@ -87,7 +87,7 @@ def simulate(id, crypto_amount, assets_jpy, coef, crypto_name, start, end, resul
 
 def run_simulation(crypto_amount, assets_jpy, coef, crypto_name, start, end, fee_rate=0.0012):
     history = []
-    close_values = get_close(crypto_name=crypto_name, start=start, end=end)
+    close_values = get_historical_price(crypto_name=crypto_name, start=start, end=end)
 
     total_fee = 0
     for index, event in close_values.iterrows():
