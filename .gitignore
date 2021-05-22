@@ -139,5 +139,6 @@ cython_debug/
 
 .vscode/
 
-simulations/
+output/
 cache/
+.idea/
