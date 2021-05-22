@@ -8,6 +8,11 @@ from deap import base
 from deap import creator
 from deap import tools
 
+"""
+Genes: coef (min, max, a, slop)
+Evaluation function: coef: tuple => simulation => earn rate: float
+"""
+
 
 class EaSimpleOptimizer:
 
@@ -23,7 +28,7 @@ class EaSimpleOptimizer:
         toolbox.register("evaluate", eval_func)
         toolbox.register("mate", tools.cxBlend, alpha=alpha)
         toolbox.register("mutate", tools.mutGaussian, mu=mu, sigma=sigma, indpb=indpb)
-        toolbox.register("select", tools.selTournament, tournsize=int(pop_size * tour_size_factor))
+        toolbox.register("select", tools.selTournament, tournsize=max(1, int(pop_size * tour_size_factor)))
 
         self.pop = toolbox.population(n=pop_size)
         self.hof = tools.HallOfFame(1)
@@ -62,20 +67,19 @@ def test():
     weights = (1.0,)
     pop_size = 1000
     tour_size_factor = 0.01
-    attr_list = [[random.uniform, -10, 10], [random.randint, -200, 300], [random.uniform, -1000, 1500]]
+    paras_list = [[random.uniform, -10, 10], [random.randint, -200, 300], [random.uniform, -1000, 1500]]
     mu = [0.0, 0.0, 0.0]
     sigma = [500.0, 200.0, 500.0]
     ngen = 100
 
     opt = EaSimpleOptimizer()
-    opt.prepare(attr_list=attr_list, weights=weights, eval_func=eval_func,
+    opt.prepare(attr_list=paras_list, weights=weights, eval_func=eval_func,
                 mu=mu, sigma=sigma, pop_size=pop_size,
                 tour_size_factor=tour_size_factor, ngen=ngen)
     hof, pop, log = opt.run(verbose=True)
 
     # print(log)
     print(hof)
-
     return pop, log, hof
 
 
