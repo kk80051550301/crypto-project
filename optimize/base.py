@@ -1,4 +1,4 @@
-import array
+import time
 import random
 from functools import partial
 import numpy
@@ -45,6 +45,7 @@ class EaSimpleOptimizer:
         self.ngen = ngen
 
     def run(self, verbose=False):
+        start = time.time()
         pop, log = algorithms.eaSimple(self.pop,
                                        self.toolbox,
                                        cxpb=self.cxpb,
@@ -53,6 +54,10 @@ class EaSimpleOptimizer:
                                        stats=self.stats,
                                        halloffame=self.hof,
                                        verbose=verbose)
+        elapsed = time.time() - start
+        if verbose:
+            print(f"Time cost: {elapsed:.1f}s")
+
         self.pop = pop
         self.log = log
         return self.hof, self.pop, self.log
