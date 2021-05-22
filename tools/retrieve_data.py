@@ -6,7 +6,10 @@ from cryptocompare import cryptocompare
 from utils import percent_calc
 
 
-def get_historical_price(crypto_name="BTC", start=datetime.now() - relativedelta(months=6), end=datetime.now(), currency="JPY",
+def get_historical_price(crypto_name="BTC",
+                         start=datetime.now() - relativedelta(months=6),
+                         end=datetime.now(),
+                         currency="JPY",
                          cache_path="cache"):
     limit = (end - start).days * 24
     fn = os.path.join(cache_path, f"{crypto_name}_{currency}_{start.date()}_{end.date()}.csv")
@@ -20,7 +23,7 @@ def get_historical_price(crypto_name="BTC", start=datetime.now() - relativedelta
     values = []
     while limit > 0:
         amount = min(1920, limit)
-        tmp = cryptocompare.get_historical_price_hour(crypto_name, currency, limit=amount, toTs=end)
+        tmp = cryptocompare.get_historical_price_hour(coin=crypto_name, currency=currency, limit=amount, toTs=end)
         end -= timedelta(hours=amount)
         limit -= amount
         values.extend(tmp)

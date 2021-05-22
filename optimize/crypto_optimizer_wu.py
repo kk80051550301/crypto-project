@@ -14,7 +14,6 @@ Evaluation function: coef: tuple => simulation => earn rate: float
 """
 
 
-
 class EaSimpleOptimizer:
 
     def prepare(self, attr_list, weights, eval_func, mu, sigma, alpha=0.2, pop_size=300, tour_size_factor=0.01,

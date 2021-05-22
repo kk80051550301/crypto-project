@@ -16,12 +16,11 @@ def sell_unit(sell_price):
     return buy_unit(sell_price, 1)
 
 
-def run_simulation(crypto_amount, assets_jpy, coef, crypto_name, start, end, fee_rate=0.0012):
+def run_simulation(crypto_amount, assets_jpy, coef, df_historical_price, fee_rate=0.0012):
     history = []
-    close_values = get_historical_price(crypto_name=crypto_name, start=start, end=end)
 
     total_fee = 0
-    for index, event in close_values.iterrows():
+    for index, event in df_historical_price.iterrows():
         state = "nothing"
         fee = 0
         rate = risk_cal(event["perc_val"], *coef)
@@ -56,7 +55,9 @@ def run_simulation(crypto_amount, assets_jpy, coef, crypto_name, start, end, fee
 
 def simulate(id, crypto_amount, assets_jpy, coef, crypto_name, start, end, result_root="simulations/", save=False,
              verbose=False):
-    history = run_simulation(crypto_amount, assets_jpy, coef, crypto_name, start, end)
+
+    df_historical_price = get_historical_price(crypto_name=crypto_name, start=start, end=end)
+    history = run_simulation(crypto_amount, assets_jpy, coef, df_historical_price)
 
     final_state = history[-1]
     # Count of (buy/sell/nothing)
