@@ -29,7 +29,7 @@ class EaSimpleOptimizer:
         toolbox.register("evaluate", eval_func)
         toolbox.register("mate", tools.cxBlend, alpha=alpha)
         toolbox.register("mutate", tools.mutGaussian, mu=mu, sigma=sigma, indpb=indpb)
-        toolbox.register("select", tools.selTournament, tournsize=int(pop_size * tour_size_factor))
+        toolbox.register("select", tools.selTournament, tournsize=max(1, int(pop_size * tour_size_factor)))
 
         self.pop = toolbox.population(n=pop_size)
         self.hof = tools.HallOfFame(1)
