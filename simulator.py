@@ -215,7 +215,7 @@ def test_trade_unit():
 
 
 if __name__ == "__main__":
-    # run()
+    run()
     # profile_simulation()
-    test_trade_unit()
+    # test_trade_unit()
 
