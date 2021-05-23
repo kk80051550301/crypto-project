@@ -5,6 +5,7 @@ from scenario import Scenario
 from simulator import run_simulation
 from optimize.base import EaSimpleOptimizer
 from strategy import PurchaseStrategy
+from tools.utils import calc_earn_rate
 
 
 class StrategyTrainer:
@@ -15,7 +16,7 @@ class StrategyTrainer:
         self.stg_class = stg_class
 
     @staticmethod
-    def calc_earn_rate(df_historical_price, strategy):
+    def simulate_earn_rate(df_historical_price, strategy):
         initial_jpy_asset = 200000
         crypto_amount = 0
 
@@ -23,7 +24,7 @@ class StrategyTrainer:
                                  df_historical_price=df_historical_price)
         final_state = history[-1]
         final_total_asset = final_state["total"]
-        earn_rate = (final_total_asset - initial_jpy_asset) / initial_jpy_asset * 100
+        earn_rate = calc_earn_rate(final_total_asset, initial_jpy_asset)
 
         return earn_rate
 
@@ -32,7 +33,7 @@ class StrategyTrainer:
             earn_rate = -100
         else:
             stg = self.stg_class(*individual)
-            earn_rate = self.calc_earn_rate(self.scenario.data, strategy=stg)
+            earn_rate = self.simulate_earn_rate(self.scenario.data, strategy=stg)
         return earn_rate,
 
     def prepare(self, weights, attr_list, sigma,

@@ -6,7 +6,7 @@ from datetime import datetime
 
 from scenario import Scenario
 from strategy import PurchaseStrategy
-from tools.utils import risk_cal, plot_history
+from tools.utils import risk_cal, plot_history, calc_earn_rate
 from tools.retrieve_data import get_historical_price
 
 
@@ -93,7 +93,7 @@ def simulate(id, crypto_amount, assets_jpy, coef, scenario, result_root="simulat
         count[term['state']] += 1
 
     summary = {
-        "earn_rate": (final_state['total'] - assets_jpy) / assets_jpy,
+        "earn_rate": calc_earn_rate(final_state['total'], assets_jpy),
         "final_total": final_state['total'],
         "final_jpy": final_state["JPY"],
         "final_crypto_amount": final_state['crypto_amount'],

@@ -10,6 +10,11 @@ def percent_calc(value, pre_value):
     return (value - pre_value) / pre_value * 100
 
 
+def calc_earn_rate(final_asset, initial_asset):
+    earn_rate = percent_calc(final_asset, initial_asset)
+    return earn_rate
+
+
 def risk_cal(change_rate, min_thresh, ceiling, a, n):
     # def invest index func
     # print(x, min_val, max_val, paras)
