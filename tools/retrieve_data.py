@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 from cryptocompare import cryptocompare
-from utils import percent_calc
+from tools.utils import percent_calc
 
 
 def get_historical_price(crypto_name="BTC",
@@ -39,7 +39,7 @@ def get_historical_price(crypto_name="BTC",
 
 
 def test():
-    parameter_file = "market_patterns.xlsx"
+    parameter_file = "../input/market_patterns.xlsx"
     # simulation_result_base = "simulations"
     # result_file = os.path.join(simulation_result_base, f"result_{datetime.now().strftime('%Y%m%d%H%M%S')}.xlsx")
 
