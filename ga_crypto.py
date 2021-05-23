@@ -35,14 +35,15 @@ class StrategyTrainer:
             earn_rate = self.calc_earn_rate(self.scenario.data, strategy=stg)
         return earn_rate,
 
-    def prepare(self, weights, attr_list, sigma, scenario,
+    def prepare(self, weights, attr_list, sigma,
                 pop_size=50, tour_size_factor=0.01, ngen=10):
 
         mu = [0] * len(attr_list)
-        self.scenario = scenario
-
         self.opt.prepare(attr_list=attr_list, weights=weights, eval_func=self.eval_func, mu=mu, sigma=sigma,
                          pop_size=pop_size, tour_size_factor=tour_size_factor, ngen=ngen)
+
+    def update_scenario(self, scenario):
+        self.scenario = scenario
 
     def train(self, verbose=False):
         hof, pop, log = self.opt.run(verbose=verbose)
@@ -59,6 +60,9 @@ def main():
         df_scenarios[col] = pd.to_datetime(df_scenarios[col])
     scenarios = []
     for i, row in df_scenarios.iterrows():
+        if row["skip"] == "yes":
+            continue
+        del row["skip"]
         s = Scenario(**row)
         s.populate_data()
         scenarios.append(s)
@@ -70,9 +74,10 @@ def main():
                  [random.uniform, 0.00075, 0.005], [random.uniform, 0.1, 5]]
     sigma = [0.2, 0.2, 0.001, 3]
     st = StrategyTrainer(stg_class=PurchaseStrategy)
-
+    st.prepare(weights=weights, attr_list=attr_list, sigma=sigma)
     for scenario in scenarios:
-        st.prepare(weights=weights, attr_list=attr_list, sigma=sigma, scenario=scenario)
+        print(f"Training under {scenario}...")
+        st.update_scenario(scenario)
         stg = st.train(verbose=True)
         print(f"Best strategy under {scenario}: {stg}")
 

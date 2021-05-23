@@ -1,3 +1,5 @@
-﻿id_,type_,comment,crypto_name,start,end,window
-1,up-down,big up and down,XRP,12/10/2017,4/1/2018,hour
-2,down,big down,XRP,1/6/2018,4/1/2018,
+id_,type_,comment,crypto_name,start,end,window,skip
+1,up-down,big up and down,XRP,12/10/2017,4/1/2018,hour,yes
+2,down,big down,XRP,1/6/2018,4/1/2018,hour,yes
+3,up-down,big up and down,ETH,4/25/2021,5/20/2021,hour,
+4,up,slow up,ETH,1/4/2021,2/20/2021,hour,
