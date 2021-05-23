@@ -10,13 +10,26 @@ from tools.utils import risk_cal, plot_history
 from tools.retrieve_data import get_historical_price
 
 
-def buy_unit(buy_price, crypto_price):
-    base = crypto_price * 0.0001
-    return (buy_price // base) * base
+def legitimize_buy_cost(buy_cost, crypto_price):
+    """Calculate the legitimate cost (in currency) of crypto to buy
+
+    :param buy_cost: The cost (in currency) you want to spend to buy the crypto
+    :param crypto_price: The current price of the crypto (in currency)
+    :return: the legitimate cost
+    """
+    expected_amount = buy_cost / crypto_price
+    legitimate_amount = legitimize_amount(expected_amount)
+    return legitimate_amount * crypto_price
 
 
-def sell_unit(sell_price):
-    return buy_unit(sell_price, 1)
+def legitimize_amount(crypto_amount):
+    """ Calculate the legitimate amount of crypto to trade
+
+    :param crypto_amount: the amount of crypto you want to trade
+    :return: the legitimate amount of crypto you can trade
+    """
+    minimum_unit_to_trade = 0.0001  # bitbank
+    return (crypto_amount // minimum_unit_to_trade) * minimum_unit_to_trade
 
 
 def run_simulation(crypto_amount, assets_jpy, strategy, df_historical_price, fee_rate=0.0012):
@@ -32,7 +45,7 @@ def run_simulation(crypto_amount, assets_jpy, strategy, df_historical_price, fee
             buy_rate = - rate
             if buy_rate < 1:
                 # buy crypto
-                buy_cost = buy_unit(assets_jpy * buy_rate, event["price"])
+                buy_cost = legitimize_buy_cost(assets_jpy * buy_rate, event["price"])
                 if buy_cost > 0:
                     fee = buy_cost * fee_rate
                     assets_jpy -= buy_cost + fee
@@ -43,7 +56,7 @@ def run_simulation(crypto_amount, assets_jpy, strategy, df_historical_price, fee
         elif rate > 0:
             if rate < 1:
                 # sell crypto
-                sell_amount = sell_unit(crypto_amount * rate)
+                sell_amount = legitimize_amount(crypto_amount * rate)
                 if sell_amount > 0:
                     crypto_amount -= sell_amount
                     sell_price = sell_amount * event["price"]
@@ -188,6 +201,21 @@ def profile_simulation():
     print(f"Avg time cost of single record: {avg_single_record:.8f}s")
 
 
+def test_trade_unit():
+    crypto_amount = 0.00022
+    res = legitimize_amount(crypto_amount)
+    assert res == 0.0002
+
+    jpy = 0.00052
+    crypto_price = 2
+    res = legitimize_buy_cost(jpy, crypto_price)
+    print(res)
+
+    assert res == 0.0004
+
+
 if __name__ == "__main__":
-    run()
+    # run()
     # profile_simulation()
+    test_trade_unit()
+
