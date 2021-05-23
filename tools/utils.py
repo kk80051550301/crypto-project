@@ -1,7 +1,3 @@
-import matplotlib.pyplot as plt
-import numpy as np
-import math
-
 from matplotlib import pyplot as plt
 
 
@@ -13,47 +9,6 @@ def percent_calc(value, pre_value):
 def calc_earn_rate(final_asset, initial_asset):
     earn_rate = percent_calc(final_asset, initial_asset)
     return earn_rate
-
-
-def risk_cal(change_rate, min_thresh, ceiling, a, n):
-    # def invest index func
-    # print(x, min_val, max_val, paras)
-    # a, n = paras
-    try:
-        invest_index = a * math.exp(n * abs(change_rate))
-    except OverflowError as e:
-        print(change_rate, min_thresh, ceiling, a, n)
-        print(e)
-        raise e
-    # invest_index = min(max(invest_index, min_val), max_val)
-
-    invest_index = 0 if invest_index < min_thresh else invest_index
-    invest_index = min(invest_index, ceiling)
-
-    if change_rate < 0:
-        invest_index = - invest_index
-
-    return invest_index
-
-
-def plot_formula():
-    eval_list = [
-        (0.01, .5, 0.00075, 2),
-        (0.2, .4, 0.000724, 3),
-        (0.03, .7, 0.000724, 4),
-    ]
-
-    x_axis = np.arange(-5, 5, 0.1)
-    vfunc = np.vectorize(risk_cal, excluded=["paras"])
-    for i, item in enumerate(eval_list):
-        mi, ma, a, n = item
-        y_axis = vfunc(x_axis, mi, ma, a, n)
-        print(np.max(y_axis))
-
-        ax1 = plt.subplot(3, 3, i + 1)
-        ax1.plot(x_axis, y_axis)
-        ax1.set_title(f"{mi}_{ma}_{a}_{n}")
-    plt.show()
 
 
 def plot_history(df_history, fn="plot.png"):
@@ -84,11 +39,4 @@ def plot_history(df_history, fn="plot.png"):
 
 
 if __name__ == '__main__':
-    plot_formula()
-    # POP_SIZE = 1000
-    # mu = [0, 0]
-    # sigma = [1, 1]
-    # FINAL_GEN = 10
-    # paras_list = [[random.uniform, 0, 100], [random.uniform, -10, 10]]
-    # cost_func = lambda paras, x=1, min=0, max=1000 : risk_cal(x, min, max, paras)
-    # optimize_main(paras_list, POP_SIZE, mu, sigma, FINAL_GEN, cost_func)
+    pass

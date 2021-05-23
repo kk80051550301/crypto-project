@@ -6,7 +6,7 @@ from datetime import datetime
 
 from scenario import Scenario
 from strategy import PurchaseStrategy
-from tools.utils import risk_cal, plot_history, calc_earn_rate
+from tools.utils import plot_history, calc_earn_rate
 from tools.retrieve_data import get_historical_price
 
 
@@ -123,7 +123,7 @@ def simulate(id, crypto_amount, assets_jpy, coef, scenario, result_root="simulat
 def run():
     parameter_file = "input/parameters.xlsx"
     simulation_result_base = "output/simulations/"
-    simulation_details_base = "output/simulations/runs/"
+    simulation_details_base = os.path.join(simulation_result_base, "runs")
     result_file = os.path.join(simulation_result_base, f"result_{datetime.now().strftime('%Y%m%d%H%M%S')}.xlsx")
 
     df_para = pd.read_excel(parameter_file)
