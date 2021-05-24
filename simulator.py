@@ -41,6 +41,7 @@ def run_simulation(crypto_amount, assets_jpy, strategy, df_historical_price, fee
         fee = 0
         # rate = risk_cal(event["perc_val"], *coef)
         rate = strategy.calc_buy_sell_rate(event["perc_val"])
+        trade_value = 0  # amount of trade in currency (e.g., JPY)
         if rate < 0:
             buy_rate = - rate
             if buy_rate < 1:
@@ -50,7 +51,8 @@ def run_simulation(crypto_amount, assets_jpy, strategy, df_historical_price, fee
                     fee = buy_cost * fee_rate
                     assets_jpy -= buy_cost + fee
                     crypto_amount += buy_cost / event["price"]
-                state = "buy"
+                    state = "buy"
+                    trade_value = buy_cost
             else:
                 print(f"WARNING: you are buying more than your currency asset, skip! rate: {rate}")
         elif rate > 0:
@@ -63,6 +65,7 @@ def run_simulation(crypto_amount, assets_jpy, strategy, df_historical_price, fee
                     fee = sell_price * fee_rate
                     assets_jpy += sell_price - fee
                     state = "sell"
+                    trade_value = sell_price
             else:
                 print(f"WARNING: you are selling more than your crypto asset, skip! rate: {rate}")
 
@@ -76,6 +79,7 @@ def run_simulation(crypto_amount, assets_jpy, strategy, df_historical_price, fee
                         "JPY": assets_jpy, "crypto_amount": crypto_amount,
                         "crypto_value": crypto_value,
                         "total_fee": total_fee,
+                        "trade_value": trade_value,
                         "total": total, "state": state})
     return history
 
@@ -108,16 +112,44 @@ def simulate(id, crypto_amount, assets_jpy, coef, scenario, result_root="simulat
 
         history_file = os.path.join(result_path, "history.xlsx")
         plot_file = os.path.join(result_path, "plot.png")
+        script_file = os.path.join(result_path, "pine_scripts.txt")
 
         df_history = pd.DataFrame(history)
         df_history.to_excel(history_file)
         plot_history(df_history, plot_file)
+        scripts = create_pine_script(df_history)
+        with open(script_file, 'w') as f:
+            f.write(scripts)
 
     if verbose:
         print(f"Result of running: {sub_path}:")
         print(summary)
 
     return summary
+
+
+def create_pine_script(df_history):
+    lines = []
+    for i, row in df_history.iterrows():
+
+        if row["state"] == "nothing":
+            continue
+        if row["state"] == "sell":
+            color = "color.red"
+            text = "Sell\\n"
+        elif row["state"] == "buy":
+            color = "color.green"
+            text = "Buy\\n"
+        text += "{0:.0f}".format(row["trade_value"])
+
+        time = datetime.fromtimestamp(row["time"])
+        line = 'label.new(timestamp("GMT+9",{time}),close,xloc=xloc.bar_time,' \
+               'yloc=yloc.abovebar,text="{text}",style=label.style_labeldown,color={color})'\
+            .format(time=",".join(map(str,[time.year, time.month, time.day, time.hour, time.minute])),
+                    text=text, color=color)
+        lines.append(line)
+
+    return "\n".join(lines)
 
 
 def run():
