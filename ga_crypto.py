@@ -78,10 +78,10 @@ def main():
         s.populate_data()
         scenarios.append(s)
 
-    stg_class = ExpRatioStrategy
-    # stg_class = LinearRatioStrategy
+    # stg_class = ExpRatioStrategy
+    stg_class = LinearRatioStrategy
     st = StrategyTrainer(stg_class=stg_class)
-    st.prepare(pop_size=100, ngen=10)
+    st.prepare(pop_size=100, ngen=10, sigma_divider=1000)
     for i, scenario in enumerate(scenarios):
         # if i == 1:
         #     continue
