@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import datetime
 
 from scenario import Scenario
-from strategy import PurchaseStrategy
+from strategy import ExpRatioStrategy
 from tools.utils import plot_history, calc_earn_rate
 from tools.retrieve_data import get_historical_price
 
@@ -82,7 +82,7 @@ def run_simulation(crypto_amount, assets_jpy, strategy, df_historical_price, fee
 
 def simulate(id, crypto_amount, assets_jpy, coef, scenario, result_root="simulations/", save=False,
              verbose=False):
-    stg = PurchaseStrategy(*coef)
+    stg = ExpRatioStrategy(*coef)
     history = run_simulation(crypto_amount, assets_jpy, stg, scenario.data)
 
     final_state = history[-1]
@@ -181,7 +181,7 @@ def profile_simulation():
     crypto_amount = 0
     assets_jpy = 200000
     coef = [0.077137627, 0.147341631, 0.003388124, 0.585231967]
-    stg = PurchaseStrategy(*coef)
+    stg = ExpRatioStrategy(*coef)
 
     res = []
     n_data_records = 0
