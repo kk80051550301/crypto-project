@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import datetime
 
 from scenario import Scenario
-from strategy import ExpRatioStrategy
+from strategy import get_stg_class
 from tools.utils import plot_history, calc_earn_rate
 from tools.retrieve_data import get_historical_price
 
@@ -84,9 +84,8 @@ def run_simulation(crypto_amount, assets_jpy, strategy, df_historical_price, fee
     return history
 
 
-def simulate(id, crypto_amount, assets_jpy, coef, scenario, result_root="simulations/", save=False,
+def simulate(id, crypto_amount, assets_jpy, stg, scenario, result_root="simulations/", save=False,
              verbose=False):
-    stg = ExpRatioStrategy(*coef)
     history = run_simulation(crypto_amount, assets_jpy, stg, scenario.data)
 
     final_state = history[-1]
@@ -104,7 +103,7 @@ def simulate(id, crypto_amount, assets_jpy, coef, scenario, result_root="simulat
         **count
     }
 
-    sub_path = f"#{id}_{scenario.path_str()}_coef[{'_'.join(map(lambda x: str(x), coef))}]"
+    sub_path = f"#{id}_{scenario.path_str()}_{stg.path_str()}]"
     if save:
         result_path = os.path.join(result_root, sub_path)
         if not os.path.exists(result_path):
@@ -117,7 +116,7 @@ def simulate(id, crypto_amount, assets_jpy, coef, scenario, result_root="simulat
         df_history = pd.DataFrame(history)
         df_history.to_excel(history_file)
         plot_history(df_history, plot_file)
-        scripts = create_pine_script(df_history)
+        scripts = create_pine_script(df_history, title=f"History #{id:d}")
         with open(script_file, 'w') as f:
             f.write(scripts)
 
@@ -128,12 +127,21 @@ def simulate(id, crypto_amount, assets_jpy, coef, scenario, result_root="simulat
     return summary
 
 
-def create_pine_script(df_history):
-    lines = []
+def create_pine_script(df_history, title="History", max_lines=200):
+    lines = [
+        "// @version=4\n\nstudy(\"{}\", overlay=true, max_labels_count=500)\n".format(title),
+    ]
+
+    count = 0
     for i, row in df_history.iterrows():
 
         if row["state"] == "nothing":
             continue
+
+        count += 1
+        if count > max_lines:
+            break
+
         if row["state"] == "sell":
             color = "color.red"
             text = "Sell\\n"
@@ -144,8 +152,8 @@ def create_pine_script(df_history):
 
         time = datetime.fromtimestamp(row["time"])
         line = 'label.new(timestamp("GMT+9",{time}),close,xloc=xloc.bar_time,' \
-               'yloc=yloc.abovebar,text="{text}",style=label.style_labeldown,color={color})'\
-            .format(time=",".join(map(str,[time.year, time.month, time.day, time.hour, time.minute])),
+               'yloc=yloc.abovebar,text="{text}",style=label.style_labeldown,color={color})' \
+            .format(time=",".join(map(str, [time.year, time.month, time.day, time.hour, time.minute])),
                     text=text, color=color)
         lines.append(line)
 
@@ -168,12 +176,15 @@ def run():
             continue
         assets_jpy = row["initial_jpy"]
         crypto_amount = row["initial_crypto"]
-        coef = (
-            row["coef_min"],
-            row["coef_max"],
-            row["coef_a"],
-            row["coef_slop"],
-        )
+
+        names = list(row.index)
+        purchase_stg = row["purchase_stg"]
+        param_count = row["param_count"]
+        start = names.index("param_count") + 1
+        params = row[start: start + param_count]
+
+        stg_class = get_stg_class(purchase_stg)
+        stg = stg_class(*params)
 
         scenario = Scenario(crypto_name=row["crypto_name"],
                             start=row["start_date"],
@@ -184,7 +195,7 @@ def run():
             id=id,
             crypto_amount=crypto_amount,
             assets_jpy=assets_jpy,
-            coef=coef,
+            stg=stg,
             scenario=scenario,
             result_root=simulation_details_base,
             save=True,
@@ -213,7 +224,8 @@ def profile_simulation():
     crypto_amount = 0
     assets_jpy = 200000
     coef = [0.077137627, 0.147341631, 0.003388124, 0.585231967]
-    stg = ExpRatioStrategy(*coef)
+    stg_class = get_stg_class("ExpRatioStrategy")
+    stg = stg_class(*coef)
 
     res = []
     n_data_records = 0
@@ -250,4 +262,3 @@ if __name__ == "__main__":
     run()
     # profile_simulation()
     # test_trade_unit()
-

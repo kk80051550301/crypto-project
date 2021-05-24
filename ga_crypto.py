@@ -89,6 +89,7 @@ def main():
         st.update_scenario(scenario)
         stg = st.train(verbose=True)
         print(f"Best strategy under {scenario}: {stg}")
+        print("Scenario: {}".format("\t".join(map(str, stg.params))))
 
 
 if __name__ == "__main__":

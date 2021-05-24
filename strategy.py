@@ -1,7 +1,17 @@
 import math
 
 
+def get_stg_class(stg_name):
+    # https://stackoverflow.com/a/1176179
+    return globals()[stg_name]
+
+
 class StrategyBase:
+
+    @property
+    def params(self):
+        raise NotImplemented
+
     @classmethod
     def param_limits(cls):
         raise NotImplemented()
@@ -34,6 +44,9 @@ class StrategyBase:
             ax1.set_title(f"{stg}")
         plt.show()
 
+    def path_str(self):
+        return "st[{}({})]".format(self.__class__.__name__, "_".join(map(str, self.params)))
+
 
 class ExpRatioStrategy(StrategyBase):
     """f(x)= a * exp(n * x)
@@ -45,6 +58,10 @@ class ExpRatioStrategy(StrategyBase):
         self.ceiling = ceiling
         self.a = a
         self.n = n
+
+    @property
+    def params(self):
+        return [self.min_thresh, self.ceiling, self.a, self.n]
 
     @classmethod
     def param_limits(cls):
@@ -95,6 +112,18 @@ class LinearRatioStrategy(StrategyBase):
         self.min_thresh = min_thresh
         self.ceiling = ceiling
         self.a = a
+
+    @classmethod
+    def param_limits(cls):
+        return [
+            (0, .1),
+            (0, .8),
+            (0.0001, 10),
+        ]
+
+    @property
+    def params(self):
+        return [self.min_thresh, self.ceiling, self.a]
 
     def calc_buy_sell_rate(self, change_rate):
         try:
