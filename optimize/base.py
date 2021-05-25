@@ -61,8 +61,10 @@ def eaSimple(population, toolbox, cxpb, mutpb, ngen, stats=None,
             print(logbook.stream)
 
         # TODO: stop here if the max fitness value does not change for several generations. (convergence)
-        # stopped_changing = ...
+        # stopped_changing = ... # <- add code here
+        # max_fitness = ...
         # if stopped_changing:
+        #     print(f"Reached convergence at :{max_fitness}")
         #     break
 
     return population, logbook
