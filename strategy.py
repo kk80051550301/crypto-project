@@ -12,6 +12,9 @@ def get_stg_class(stg_name):
 
 class StrategyBase:
 
+    def __init__(self):
+        self.id_ = -1
+
     @property
     def params(self):
         raise NotImplemented
@@ -49,7 +52,7 @@ class StrategyBase:
         plt.show()
 
     def path_str(self):
-        return "st[{}({})]".format(self.__class__.__name__, "_".join(map(str, self.params)))
+        return "st[{:d}({})]".format(self.id_, "_".join(map(str, self.params)))
 
 
 class ExpRatioStrategy(StrategyBase):
@@ -57,21 +60,26 @@ class ExpRatioStrategy(StrategyBase):
     The return value will be set to 0 if it is less than min_thresh
     The return value will be less than ceiling
     """
-    def __init__(self, min_thresh, ceiling, a, n):
-        self.min_thresh = min_thresh
-        self.ceiling = ceiling
+    min_thresh = 0.01
+    ceiling = 0.2
+
+    def __init__(self, a, n):
+        super().__init__()
+        # self.min_thresh = min_thresh
+        # self.ceiling = ceiling
         self.a = a
         self.n = n
 
     @property
     def params(self):
-        return [self.min_thresh, self.ceiling, self.a, self.n]
+        # self.min_thresh, self.ceiling,
+        return [self.a, self.n]
 
     @classmethod
     def param_limits(cls):
+        # (0, .2),
+        # (0, .8),
         return [
-            (0, .2),
-            (0, .8),
             (0.0001, 1),
             (0.001, 10)
         ]
@@ -108,21 +116,27 @@ class ExpRatioStrategy(StrategyBase):
 
 
 class LinearRatioStrategy(StrategyBase):
-    """f(x)= a * x
+    """f(x)= a * x + b
     The return value will be set to 0 if it is less than min_thresh
     The return value will be less than ceiling
     """
-    def __init__(self, min_thresh, ceiling, a):
-        self.min_thresh = min_thresh
-        self.ceiling = ceiling
+    min_thresh = 0.01
+    ceiling = 0.2
+
+    def __init__(self, a, b):
+        super().__init__()
+        # self.min_thresh = min_thresh
+        # self.ceiling = ceiling
         self.a = a
+        self.b = b
 
     @classmethod
     def param_limits(cls):
         return [
-            (0, .1),
-            (0, .8),
-            (0.0001, 10),
+            # (0, .1),
+            # (0, .8),
+            (0.0001, 50),
+            (-100, 100)
         ]
 
     @property
@@ -158,7 +172,7 @@ class LinearRatioStrategy(StrategyBase):
 
 
 def test():
-    stg = ExpRatioStrategy(0.001, 0.0002, 0.1, 0.2)
+    stg = ExpRatioStrategy(0.001, 0.0002)
     print(stg)
 
 
