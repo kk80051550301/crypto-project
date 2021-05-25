@@ -10,32 +10,29 @@ from tools.utils import calc_earn_rate
 
 class StrategyTrainer:
 
-    def __init__(self, stg_class=None):
+    def __init__(self, stg_class=None, init_currency=200000, init_crypto=0):
         self.opt = EaSimpleOptimizer()
         self.scenario = None
         self.stg_class = stg_class
         self.limits_list = self.stg_class.param_limits()
+        self.initial_currency = init_currency
+        self.init_crypto_amount = init_crypto
 
-    @staticmethod
-    def simulate_earn_rate(df_historical_price, strategy):
-        initial_jpy_asset = 200000
-        crypto_amount = 0
-
-        history = run_simulation(crypto_amount=crypto_amount, assets_jpy=initial_jpy_asset, strategy=strategy,
-                                 df_historical_price=df_historical_price)
+    def simulate_earn_rate(self, df_historical_price, strategy):
+        history = run_simulation(crypto_amount=self.init_crypto_amount, assets_jpy=self.initial_currency,
+                                 strategy=strategy, df_historical_price=df_historical_price)
         final_state = history[-1]
         final_total_asset = final_state["total"]
-        earn_rate = calc_earn_rate(final_total_asset, initial_jpy_asset)
+        earn_rate = calc_earn_rate(final_total_asset, self.initial_currency)
 
         return earn_rate
 
     def eval_func(self, individual):
+        # TODO: Use constraints instead: https://deap.readthedocs.io/en/master/tutorials/advanced/constraints.html
         for i, limits in enumerate(self.limits_list):
             if not limits[0] <= individual[i] <= limits[1]:
                 earn_rate = -100
                 break
-        # if not (0 <= individual[0] <= 1 and 0 <= individual[1] <= 1):
-        #     earn_rate = -100
         else:
             stg = self.stg_class(*individual)
             earn_rate = self.simulate_earn_rate(self.scenario.data, strategy=stg)
@@ -65,6 +62,7 @@ class StrategyTrainer:
 
 
 def main():
+    random.seed(42)
     scenario_file = "input/market_patterns.csv"
     df_scenarios = pd.read_csv(scenario_file)
     for col in ["start", "end"]:
