@@ -3,7 +3,11 @@ import math
 
 def get_stg_class(stg_name):
     # https://stackoverflow.com/a/1176179
-    return globals()[stg_name]
+    try:
+        return globals()[stg_name]
+    except KeyError:
+        print(f"Cannot find strategy class: {stg_name}")
+        return None
 
 
 class StrategyBase:

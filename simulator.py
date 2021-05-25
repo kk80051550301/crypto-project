@@ -184,6 +184,8 @@ def run():
         params = row[start: start + param_count]
 
         stg_class = get_stg_class(purchase_stg)
+        if not stg_class:
+            continue
         stg = stg_class(*params)
 
         scenario = Scenario(crypto_name=row["crypto_name"],
