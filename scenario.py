@@ -42,4 +42,4 @@ class Scenario:
         return f"<{self.__class__.__name__}({self.type_}, {self.crypto_name}, {self.start}, {self.end})>"
 
     def path_str(self):
-        return f"s[{self.type_}_{self.crypto_name}_{self.start.strftime('%Y%m%d')}_{self.end.strftime('%Y%m%d')}]"
+        return f"sc[{self.type_}_{self.crypto_name}_{self.start.strftime('%Y%m%d')}_{self.end.strftime('%Y%m%d')}]"

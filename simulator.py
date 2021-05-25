@@ -5,18 +5,31 @@ import pandas as pd
 from datetime import datetime
 
 from scenario import Scenario
-from strategy import PurchaseStrategy
-from tools.utils import risk_cal, plot_history
+from strategy import get_stg_class
+from tools.utils import plot_history, calc_earn_rate
 from tools.retrieve_data import get_historical_price
 
 
-def buy_unit(buy_price, crypto_price):
-    base = crypto_price * 0.0001
-    return (buy_price // base) * base
+def legitimize_buy_cost(buy_cost, crypto_price):
+    """Calculate the legitimate cost (in currency) of crypto to buy
+
+    :param buy_cost: The cost (in currency) you want to spend to buy the crypto
+    :param crypto_price: The current price of the crypto (in currency)
+    :return: the legitimate cost
+    """
+    expected_amount = buy_cost / crypto_price
+    legitimate_amount = legitimize_amount(expected_amount)
+    return legitimate_amount * crypto_price
 
 
-def sell_unit(sell_price):
-    return buy_unit(sell_price, 1)
+def legitimize_amount(crypto_amount):
+    """ Calculate the legitimate amount of crypto to trade
+
+    :param crypto_amount: the amount of crypto you want to trade
+    :return: the legitimate amount of crypto you can trade
+    """
+    minimum_unit_to_trade = 0.0001  # bitbank
+    return (crypto_amount // minimum_unit_to_trade) * minimum_unit_to_trade
 
 
 def run_simulation(crypto_amount, assets_jpy, strategy, df_historical_price, fee_rate=0.0012):
@@ -28,28 +41,31 @@ def run_simulation(crypto_amount, assets_jpy, strategy, df_historical_price, fee
         fee = 0
         # rate = risk_cal(event["perc_val"], *coef)
         rate = strategy.calc_buy_sell_rate(event["perc_val"])
+        trade_value = 0  # amount of trade in currency (e.g., JPY)
         if rate < 0:
             buy_rate = - rate
             if buy_rate < 1:
                 # buy crypto
-                buy_cost = buy_unit(assets_jpy * buy_rate, event["price"])
+                buy_cost = legitimize_buy_cost(assets_jpy * buy_rate, event["price"])
                 if buy_cost > 0:
                     fee = buy_cost * fee_rate
                     assets_jpy -= buy_cost + fee
                     crypto_amount += buy_cost / event["price"]
-                state = "buy"
+                    state = "buy"
+                    trade_value = buy_cost
             else:
                 print(f"WARNING: you are buying more than your currency asset, skip! rate: {rate}")
         elif rate > 0:
             if rate < 1:
                 # sell crypto
-                sell_amount = sell_unit(crypto_amount * rate)
+                sell_amount = legitimize_amount(crypto_amount * rate)
                 if sell_amount > 0:
                     crypto_amount -= sell_amount
                     sell_price = sell_amount * event["price"]
                     fee = sell_price * fee_rate
                     assets_jpy += sell_price - fee
                     state = "sell"
+                    trade_value = sell_price
             else:
                 print(f"WARNING: you are selling more than your crypto asset, skip! rate: {rate}")
 
@@ -63,13 +79,13 @@ def run_simulation(crypto_amount, assets_jpy, strategy, df_historical_price, fee
                         "JPY": assets_jpy, "crypto_amount": crypto_amount,
                         "crypto_value": crypto_value,
                         "total_fee": total_fee,
+                        "trade_value": trade_value,
                         "total": total, "state": state})
     return history
 
 
-def simulate(id, crypto_amount, assets_jpy, coef, scenario, result_root="simulations/", save=False,
+def simulate(id, crypto_amount, assets_jpy, stg, scenario, result_root="simulations/", save=False,
              verbose=False):
-    stg = PurchaseStrategy(*coef)
     history = run_simulation(crypto_amount, assets_jpy, stg, scenario.data)
 
     final_state = history[-1]
@@ -80,14 +96,14 @@ def simulate(id, crypto_amount, assets_jpy, coef, scenario, result_root="simulat
         count[term['state']] += 1
 
     summary = {
-        "earn_rate": (final_state['total'] - assets_jpy) / assets_jpy,
+        "earn_rate": calc_earn_rate(final_state['total'], assets_jpy),
         "final_total": final_state['total'],
         "final_jpy": final_state["JPY"],
         "final_crypto_amount": final_state['crypto_amount'],
         **count
     }
 
-    sub_path = f"#{id}_{scenario.path_str()}_coef[{'_'.join(map(lambda x: str(x), coef))}]"
+    sub_path = f"#{id}_{scenario.path_str()}_{stg.path_str()}]"
     if save:
         result_path = os.path.join(result_root, sub_path)
         if not os.path.exists(result_path):
@@ -95,10 +111,14 @@ def simulate(id, crypto_amount, assets_jpy, coef, scenario, result_root="simulat
 
         history_file = os.path.join(result_path, "history.xlsx")
         plot_file = os.path.join(result_path, "plot.png")
+        script_file = os.path.join(result_path, "pine_scripts.txt")
 
         df_history = pd.DataFrame(history)
         df_history.to_excel(history_file)
         plot_history(df_history, plot_file)
+        scripts = create_pine_script(df_history, title=f"History #{id:d}")
+        with open(script_file, 'w') as f:
+            f.write(scripts)
 
     if verbose:
         print(f"Result of running: {sub_path}:")
@@ -107,10 +127,43 @@ def simulate(id, crypto_amount, assets_jpy, coef, scenario, result_root="simulat
     return summary
 
 
+def create_pine_script(df_history, title="History", max_lines=200):
+    lines = [
+        "// @version=4\n\nstudy(\"{}\", overlay=true, max_labels_count=500)\n".format(title),
+    ]
+
+    count = 0
+    for i, row in df_history.iterrows():
+
+        if row["state"] == "nothing":
+            continue
+
+        count += 1
+        if count > max_lines:
+            break
+
+        if row["state"] == "sell":
+            color = "color.red"
+            text = "Sell\\n"
+        elif row["state"] == "buy":
+            color = "color.green"
+            text = "Buy\\n"
+        text += "{0:.0f}".format(row["trade_value"])
+
+        time = datetime.fromtimestamp(row["time"])
+        line = 'label.new(timestamp("GMT+9",{time}),close,xloc=xloc.bar_time,' \
+               'yloc=yloc.abovebar,text="{text}",style=label.style_labeldown,color={color})' \
+            .format(time=",".join(map(str, [time.year, time.month, time.day, time.hour, time.minute])),
+                    text=text, color=color)
+        lines.append(line)
+
+    return "\n".join(lines)
+
+
 def run():
     parameter_file = "input/parameters.xlsx"
     simulation_result_base = "output/simulations/"
-    simulation_details_base = "output/simulations/runs/"
+    simulation_details_base = os.path.join(simulation_result_base, "runs")
     result_file = os.path.join(simulation_result_base, f"result_{datetime.now().strftime('%Y%m%d%H%M%S')}.xlsx")
 
     df_para = pd.read_excel(parameter_file)
@@ -123,12 +176,17 @@ def run():
             continue
         assets_jpy = row["initial_jpy"]
         crypto_amount = row["initial_crypto"]
-        coef = (
-            row["coef_min"],
-            row["coef_max"],
-            row["coef_a"],
-            row["coef_slop"],
-        )
+
+        names = list(row.index)
+        purchase_stg = row["purchase_stg"]
+        param_count = row["param_count"]
+        start = names.index("param_count") + 1
+        params = row[start: start + param_count]
+
+        stg_class = get_stg_class(purchase_stg)
+        if not stg_class:
+            continue
+        stg = stg_class(*params)
 
         scenario = Scenario(crypto_name=row["crypto_name"],
                             start=row["start_date"],
@@ -139,7 +197,7 @@ def run():
             id=id,
             crypto_amount=crypto_amount,
             assets_jpy=assets_jpy,
-            coef=coef,
+            stg=stg,
             scenario=scenario,
             result_root=simulation_details_base,
             save=True,
@@ -168,7 +226,8 @@ def profile_simulation():
     crypto_amount = 0
     assets_jpy = 200000
     coef = [0.077137627, 0.147341631, 0.003388124, 0.585231967]
-    stg = PurchaseStrategy(*coef)
+    stg_class = get_stg_class("ExpRatioStrategy")
+    stg = stg_class(*coef)
 
     res = []
     n_data_records = 0
@@ -188,6 +247,20 @@ def profile_simulation():
     print(f"Avg time cost of single record: {avg_single_record:.8f}s")
 
 
+def test_trade_unit():
+    crypto_amount = 0.00022
+    res = legitimize_amount(crypto_amount)
+    assert res == 0.0002
+
+    jpy = 0.00052
+    crypto_price = 2
+    res = legitimize_buy_cost(jpy, crypto_price)
+    print(res)
+
+    assert res == 0.0004
+
+
 if __name__ == "__main__":
     run()
     # profile_simulation()
+    # test_trade_unit()
