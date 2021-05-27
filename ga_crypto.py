@@ -55,7 +55,6 @@ class StrategyTrainer:
 
     def train(self, verbose=False):
         hof, pop, log = self.opt.run(verbose=verbose)
-
         best = hof[0]
         stg = self.stg_class(*best)
         return stg
@@ -76,11 +75,12 @@ def main():
         s.populate_data()
         scenarios.append(s)
 
-    # stg_class = ExpRatioStrategy
-    stg_class = LinearRatioStrategy
-    st = StrategyTrainer(stg_class=stg_class)
-    st.prepare(pop_size=500, ngen=10, sigma_divider=1000)
+    stg_class = ExpRatioStrategy
+    # stg_class = LinearRatioStrategy
+    
     for i, scenario in enumerate(scenarios):
+        st = StrategyTrainer(stg_class=stg_class)
+        st.prepare(pop_size=100, ngen=100, sigma_divider=1000)
         # if i == 1:
         #     continue
         print(f"Training under {scenario}...")
