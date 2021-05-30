@@ -24,9 +24,10 @@ class StrategyTrainer:
                                  strategy=strategy, df_historical_price=df_historical_price)
         final_state = history[-1]
         final_total_asset = final_state["total"]
-        earn_rate = calc_earn_rate(final_total_asset, self.initial_currency)
         # calculate earn_rate by each trade
-        # earn_rate = calc_profit(history)
+        # earn_rate = calc_earn_rate(final_total_asset, self.initial_currency)
+        earn_rate = calc_profit(history)
+        # print(final_total_asset)
         return earn_rate
 
     def eval_func(self, individual):

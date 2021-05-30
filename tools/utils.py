@@ -12,7 +12,7 @@ def calc_profit(history):
     buy_total_cost = df[df["state"]=="buy"]["trade_value"].sum()
     sell_earn = df[df["state"]=="sell"]["trade_value"].sum()
     sell_earn += df.at[len(df)-1, "crypto_value"]
-    profit = percent_calc(sell_cost, buy_total_cost)
+    profit = percent_calc(sell_earn, buy_total_cost)
     # print(df.head())
     # print(f"buy cost : \n{buy_total_cost}")
     # print(f"sell earn + crypto_currancy value : \n{sell_cost}")
