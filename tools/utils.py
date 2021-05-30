@@ -1,9 +1,23 @@
 from matplotlib import pyplot as plt
+import pandas as pd
 
 
 def percent_calc(value, pre_value):
     # return percentage(unit is 1%)
     return (value - pre_value) / pre_value * 100
+
+
+def calc_profit(history):
+    df = pd.DataFrame(history)
+    buy_total_cost = df[df["state"]=="buy"]["trade_value"].sum()
+    sell_earn = df[df["state"]=="sell"]["trade_value"].sum()
+    sell_earn += df.at[len(df)-1, "crypto_value"]
+    profit = percent_calc(sell_cost, buy_total_cost)
+    # print(df.head())
+    # print(f"buy cost : \n{buy_total_cost}")
+    # print(f"sell earn + crypto_currancy value : \n{sell_cost}")
+    # print(f"profit : {profit} %")
+    return profit
 
 
 def calc_earn_rate(final_asset, initial_asset):
