@@ -25,4 +25,3 @@ Crypto Project is a simulator for investing crypto currency
 
 ## Author
 
-[tcnksm](https://github.com/tcnksm)
