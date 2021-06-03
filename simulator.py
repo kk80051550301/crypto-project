@@ -36,11 +36,14 @@ def run_simulation(crypto_amount, assets_jpy, strategy, df_historical_price, fee
     history = []
 
     total_fee = 0
+    previous_rate = 0
     for index, event in df_historical_price.iterrows():
+        
         state = "nothing"
         fee = 0
+        coefs = strategy.coefs_costf()
         # rate = risk_cal(event["perc_val"], *coef)
-        rate = strategy.calc_buy_sell_rate(event["perc_val"])
+        rate = strategy.calc_buy_sell_rate(*event[coefs])
         trade_value = 0  # amount of trade in currency (e.g., JPY)
         if rate < 0:
             buy_rate = - rate
@@ -51,6 +54,7 @@ def run_simulation(crypto_amount, assets_jpy, strategy, df_historical_price, fee
                     fee = buy_cost * fee_rate
                     assets_jpy -= buy_cost + fee
                     crypto_amount += buy_cost / event["price"]
+                    
                     state = "buy"
                     trade_value = buy_cost
             else:
