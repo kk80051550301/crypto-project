@@ -23,6 +23,10 @@ class StrategyBase:
     def param_limits(cls):
         raise NotImplemented()
 
+    @classmethod
+    def coefs_costf(cls):
+        return NotImplemented()
+
     def calc_buy_sell_rate(self, change_rate):
         raise NotImplemented()
 
@@ -84,18 +88,22 @@ class ExpRatioStrategy(StrategyBase):
             (0.001, 10)
         ]
 
-    def calc_buy_sell_rate(self, change_rate):
+    @classmethod
+    def coefs_costf(cls):
+        return ["perc_val"]
+
+    def calc_buy_sell_rate(self, perc_val):
         try:
-            invest_index = self.a * math.exp(self.n * abs(change_rate))
+            invest_index = self.a * math.exp(self.n * abs(perc_val))
         except OverflowError as e:
-            print(change_rate, self.a, self.n)
+            print(perc_val, self.a, self.n)
             print(e)
             raise e
 
         invest_index = 0 if invest_index < self.min_thresh else invest_index
         invest_index = min(invest_index, self.ceiling)
 
-        if change_rate < 0:
+        if perc_val < 0:
             invest_index = - invest_index
 
         return invest_index
@@ -103,15 +111,25 @@ class ExpRatioStrategy(StrategyBase):
     def __str__(self):
         return f"<{self.__class__.__name__}({self.min_thresh:f}, {self.ceiling:f}, {self.a:f}, {self.n:f})>"
 
+    # @classmethod
+    # def sample_parameters(cls):
+    #     return [
+    #         (0.01, .5, 0.00075, 2),
+    #         (0.2, .4, 0.000724, 3),
+    #         (0.03, .7, 0.000724, 4),
+    #         (0.426715, 0.258681, 288.190216, 3.928983),
+    #         (0.592046, 0.091942, 306.110021, 4.229820),
+    #         (0.615946, 0.999249, 0.008156, 0.740697),
+    #     ]
     @classmethod
     def sample_parameters(cls):
         return [
-            (0.01, .5, 0.00075, 2),
-            (0.2, .4, 0.000724, 3),
-            (0.03, .7, 0.000724, 4),
-            (0.426715, 0.258681, 288.190216, 3.928983),
-            (0.592046, 0.091942, 306.110021, 4.229820),
-            (0.615946, 0.999249, 0.008156, 0.740697),
+            (0.00075, 2),
+            (0.000724, 3),
+            (0.000724, 4),
+            (288.190216, 3.928983),
+            (306.110021, 4.229820),
+            (0.008156, 0.740697),
         ]
 
 
@@ -142,19 +160,99 @@ class LinearRatioStrategy(StrategyBase):
     @property
     def params(self):
         return [self.min_thresh, self.ceiling, self.a]
+    
 
-    def calc_buy_sell_rate(self, change_rate):
+    @classmethod
+    def coefs_costf(cls):
+        return ["perc_val"]
+    
+    
+    def calc_buy_sell_rate(self, perc_val):
         try:
-            invest_index = self.a * abs(change_rate)
+            invest_index = self.a * abs(perc_val)
         except OverflowError as e:
-            print(change_rate, self.a)
+            print(perc_val, self.a)
             print(e)
             raise e
 
         invest_index = 0 if invest_index < self.min_thresh else invest_index
         invest_index = min(invest_index, self.ceiling)
 
-        if change_rate < 0:
+        if perc_val < 0:
+            invest_index = - invest_index
+
+        return invest_index
+
+    def __str__(self):
+        return f"<{self.__class__.__name__}({self.min_thresh:f}, {self.ceiling:f}, {self.a:f})>"
+
+    # @classmethod
+    # def sample_parameters(cls):
+    #     return [
+    #         (0.01, .5, 0.5),
+    #         (0.2, .4, 1),
+    #         (0.03, .7, 3),
+    #     ]
+    @classmethod
+    def sample_parameters(cls):
+        return [
+            (.5, 0.5),
+            (.4, 1),
+            (.7, 3),
+        ]
+
+
+
+class LinearRatioLagsStrategy(StrategyBase):
+    """f(x)= a * x + b + c * y_previous
+    The return value will be set to 0 if it is less than min_thresh
+    The return value will be less than ceiling
+    """
+    min_thresh = 0.01
+    ceiling = 0.2
+
+    def __init__(self, a, b, c):
+        super().__init__()
+        # self.min_thresh = min_thresh
+        # self.ceiling = ceiling
+        self.a = a
+        self.b = b
+        self.c = c
+        self.pre_invest = 0
+
+    @classmethod
+    def param_limits(cls):
+        return [
+            # (0, .1),
+            # (0, .8),
+            (0.0001, 50),
+            (-100, 100),
+            (-1, 1)
+        ]
+
+    @property
+    def params(self):
+        return [self.min_thresh, self.ceiling, self.a]
+
+    @classmethod
+    def coefs_costf(cls):
+        return ["perc_val"]
+
+    def calc_buy_sell_rate(self, perc_val):
+        try:
+            invest_index = self.a * abs(perc_val) + self.c * self.pre_invest
+            
+
+        except OverflowError as e:
+            print(perc_val, self.pre_invest, self.a, self.c)
+            print(e)
+            raise e
+
+        invest_index = 0 if invest_index < self.min_thresh else invest_index
+        invest_index = min(invest_index, self.ceiling)
+        self.pre_invest = invest_index
+
+        if perc_val < 0:
             invest_index = - invest_index
 
         return invest_index
@@ -178,5 +276,6 @@ def test():
 
 if __name__ == '__main__':
     # test()
-    ExpRatioStrategy.plot_samples()
+    # ExpRatioStrategy.plot_samples()
     # LinearRatioStrategy.plot_samples()
+    LinearRatioLagsStrategy.plot_samples()
