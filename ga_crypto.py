@@ -4,7 +4,7 @@ import pandas as pd
 from scenario import Scenario
 from simulator import run_simulation
 from optimize.base import EaSimpleOptimizer
-from strategy import ExpRatioStrategy, LinearRatioStrategy
+from strategy import ExpRatioStrategy, LinearRatioStrategy, LinearRatioLagsStrategy
 from tools.utils import calc_earn_rate, calc_profit
 
 class StrategyTrainer:
@@ -18,16 +18,13 @@ class StrategyTrainer:
         self.init_crypto_amount = init_crypto
 
 
-
     def simulate_earn_rate(self, df_historical_price, strategy):
         history = run_simulation(crypto_amount=self.init_crypto_amount, assets_jpy=self.initial_currency,
                                  strategy=strategy, df_historical_price=df_historical_price)
         final_state = history[-1]
         final_total_asset = final_state["total"]
-        # calculate earn_rate by each trade
         # earn_rate = calc_earn_rate(final_total_asset, self.initial_currency)
         earn_rate = calc_profit(history)
-        # print(final_total_asset)
         return earn_rate
 
     def eval_func(self, individual):
@@ -79,11 +76,11 @@ def main():
         scenarios.append(s)
 
     # stg_class = ExpRatioStrategy
-    stg_class = LinearRatioStrategy
-    
+    # stg_class = LinearRatioStrategy
+    stg_class = LinearRatioLagsStrategy
     for i, scenario in enumerate(scenarios):
         st = StrategyTrainer(stg_class=stg_class)
-        st.prepare(pop_size=100, ngen=100, sigma_divider=1000)
+        st.prepare(pop_size=100, ngen=50, sigma_divider=1000)
         # if i == 1:
         #     continue
         print(f"Training under {scenario}...")
