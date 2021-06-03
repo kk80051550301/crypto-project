@@ -65,8 +65,8 @@ def eaSimple(population, toolbox, cxpb, mutpb, ngen, stats=None,
         if gen > LEAST_GEN :
             max_convergence = abs(numpy.average(logbook.select("max")[-7:-2]) 
                     - logbook.select("max")[-1]) < 0.0001
-            std_convergence = abs(logbook.select("std")[-1] 
-                    - logbook.select("std")[-2]) < 0.0001
+            std_convergence = abs(numpy.average(logbook.select("std")[-7:-2]) 
+                    - logbook.select("std")[-1]) < 0.0001
             stopped_changing = max_convergence or std_convergence
             max_fitness = logbook.select("max")[-1]
             if stopped_changing:
